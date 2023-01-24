@@ -13,8 +13,8 @@
 // #include "Constants.h"
 using namespace std;
 
-const double rotationVectorMultiplier = 1; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
-const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
+const double rotationVectorMultiplier = 1.5; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
+const double speedLimit = 0.1;             // limit motor speed output   0 < x <= 1
 const double baseWidth = 14.5;             // inches
 const double baseLength = 23.25;
 
@@ -23,9 +23,9 @@ const double relativeX = baseWidth / 2;
 const double relativeY = baseLength / 2;
 
 double relativeAFL;
-double getDesiredFR;
-double getDesiredBL;
-double getDesiredBR;
+double relativeAFR;
+double relativeABL;
+double relativeABR;
 //pid difference var
 double desiredTurnFL;
 double distanceFL;
@@ -53,8 +53,8 @@ double magnitude(double x, double y) // magnitude of vector
 
 int magnitudeOptimization(double initialAngle, double finalAngle)
 {
-    double posDiff = fabs(fmod(finalAngle - initialAngle, M_PI * 2));
-    if (posDiff > M_PI_2 && posDiff < M_PI_2 * 3)
+    double posDiff = fabs(fmod(finalAngle - initialAngle, 360.0));
+    if (posDiff > 90.0 && posDiff < 270.0)
     {
         return -1;
     }
@@ -87,7 +87,7 @@ double findMax(double arr[], int len) // finds max value in array
     double Max = arr[0];
     for (int i = 1; i < len; i++)
     {
-        Max = max(sus, arr[i]);
+        Max = max(Max, arr[i]);
     }
     return Max;
 }
@@ -142,8 +142,8 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     double joystickMagnitude = magnitude(xLeft, yLeft);
     if (joystickMagnitude)
     {
-        posVector.x = joystickMagnitude * sin(atan2(xLeft, yLeft) - gyro);
-        posVector.y = joystickMagnitude * cos(atan2(xLeft, yLeft) - gyro); // math notation of vector
+        posVector.x = joystickMagnitude * sin(atan2(xLeft, yLeft) + gyro);
+        posVector.y = joystickMagnitude * cos(atan2(xLeft, yLeft) + gyro); // math notation of vector
     }
     else if (abs(xRight) < 0.1)
     {
@@ -153,10 +153,10 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     double rotationScalar = rotationVectorMultiplier * xRight / magnitude(relativeX, relativeY);
 
     // declare rotation vector directions and add positional
-    Point rawFL = Point((rotationScalar * relativeY) + posVector.x, (rotationScalar * relativeX) + posVector.y);
-    Point rawFR = Point((rotationScalar * relativeY) + posVector.x, -(rotationScalar * relativeX) + posVector.y);
-    Point rawBL = Point(-(rotationScalar * relativeY) + posVector.x, (rotationScalar * relativeX) + posVector.y);
-    Point rawBR = Point(-(rotationScalar * relativeY) + posVector.x, -(rotationScalar * relativeX) + posVector.y);
+    Point rawFL = Point((rotationScalar * relativeY) + posVector.x, -(rotationScalar * relativeX) + posVector.y);
+    Point rawFR = Point((rotationScalar * relativeY) + posVector.x, (rotationScalar * relativeX) + posVector.y);
+    Point rawBL = Point(-(rotationScalar * relativeY) + posVector.x, -(rotationScalar * relativeX) + posVector.y);
+    Point rawBR = Point(-(rotationScalar * relativeY) + posVector.x, (rotationScalar * relativeX) + posVector.y);
 
     // the most sketchy thing ever.
     double magnitudes[4] = {magnitude(rawFL.x, rawFL.y), magnitude(rawFR.x, rawFR.y), magnitude(rawBL.x, rawBL.y), magnitude(rawBR.x, rawBR.y)};
@@ -175,10 +175,10 @@ class Robot : public frc::TimedRobot
     public:
         void TeleopInit() override
         {
-            m_FLSwerveMotor.SetInverted(true);
-            m_FRSwerveMotor.SetInverted(true);
-            m_BLSwerveMotor.SetInverted(true);
-            m_BRSwerveMotor.SetInverted(true);
+            m_FLSwerveMotor.SetInverted(false);
+            m_FRSwerveMotor.SetInverted(false);
+            m_BLSwerveMotor.SetInverted(false);
+            m_BRDriveMotor.SetInverted(false);
 
             m_FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
             m_FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
@@ -195,53 +195,58 @@ class Robot : public frc::TimedRobot
 
             m_navX.ZeroYaw();
 
-            // encoderTurn.velocityMeasurementPeriod = ctre::phoenix::sensors::SensorVelocityMeasPeriod::Period_100Ms;
-            // encoderTurn.absoluteSensorRange = ctre::phoenix::sensors::AbsoluteSensorRange::Signed_PlusMinus180;
-            // encoderTurn.sensorDirection = false;
-            // encoderTurn.sensorCoefficient = M_PI / 2048.0;
-            // encoderTurn.sensorTimeBase = ctre::phoenix::sensors::SensorTimeBase::PerSecond;
+            // FLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // FRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // BLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // BRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            FLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
+            FRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
+            BLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
+            BRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
         }
         void TeleopPeriodic() override
         {
-            swerveModule moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX()), deadband(m_Controller.GetLeftY()), deadband(m_Controller.GetRightX()), getRadian(m_navX.GetAngle()), FLCANCoder.GetPosition(), FRCANCoder.GetPosition(), BLCANCoder.GetPosition(), BRCANCoder.GetPosition());
+            swerveModule moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX()), deadband(m_Controller.GetLeftY()), deadband(m_Controller.GetRightX()), getRadian(m_navX.GetAngle()));
             
             // only update wheel angles when input given
             if (moduleDesiredStates.fla < 600.0)
             {
-                driveFL = magnitudeOptimization(FLCANCoder.GetPosition(), moduleDesiredStates.fla)
                 desiredAFL = moduleDesiredStates.fla;
+                desiredAFR = moduleDesiredStates.fra;
+                desiredABL = moduleDesiredStates.bla;
+                desiredABR = moduleDesiredStates.bra;
             }
-            distanceFL = desiredTurnFL + FLCANCoder.GetPosition() - relativeAFL;
+            distanceFL = FLCANCoder.GetPosition()+desiredTurnFL - relativeAFL;
             desiredTurnFL = angleOptimisation(FLCANCoder.GetPosition(), desiredAFL);
             relativeAFL = FLCANCoder.GetPosition() + desiredTurnFL;
-            m_FLSwerveMotor.Set(ControlMode::Position, pid.Calculate(distanceFL, relativeAFL));
+            m_FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, desiredTurnFL*speedLimit/90.0);
 
-            // distanceFR = desiredTurnFR + FRCANCoder.GetPosition() - relativeAFR;
-            // desiredTurnFR = angleOptimisation(FRCANCoder.GetPosition(), desiredAFR);
-            // relativeAFR = FRCANCoder.GetPosition() + desiredTurnFR;
-            // m_FRSwerveMotor.Set(ControlMode::Position, pid.Calculate(distanceFR, relativeAFR));
+            distanceFR = desiredTurnFR + FRCANCoder.GetPosition() - relativeAFR;
+            desiredTurnFR = angleOptimisation(FRCANCoder.GetPosition(), desiredAFR);
+            relativeAFR = FRCANCoder.GetPosition() + desiredTurnFR;
+            m_FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, desiredTurnFR*speedLimit/90.0);
 
-            // distanceBL = desiredTurnBL + BLCANCoder.GetPosition() - relativeABL;
-            // desiredTurnBL = angleOptimisation(BLCANCoder.GetPosition(), desiredABL);
-            // relativeABL = BLCANCoder.GetPosition() + desiredTurnBL;
-            // m_BLSwerveMotor.Set(ControlMode::Position, pid.Calculate(distanceBL, relativeABL));
+            distanceBL = desiredTurnBL + BLCANCoder.GetPosition() - relativeABL;
+            desiredTurnBL = angleOptimisation(BLCANCoder.GetPosition(), desiredABL);
+            relativeABL = BLCANCoder.GetPosition() + desiredTurnBL;
+            m_BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, desiredTurnBL*speedLimit/90.0);
 
-            // distanceBR = desiredTurnBR + BRCANCoder.GetPosition() - relativeABR;
-            // desiredTurnBR = angleOptimisation(BRCANCoder.GetPosition(), desiredABR);
-            // relativeABR = BRCANCoder.GetPosition() + desiredTurnBR;
-            // m_BRSwerveMotor.Set(ControlMode::Position, pid.Calculate(distanceBR, relativeABR));
+            distanceBR = desiredTurnBR + BRCANCoder.GetPosition() - relativeABR;
+            desiredTurnBR = angleOptimisation(BRCANCoder.GetPosition(), desiredABR);
+            relativeABR = BRCANCoder.GetPosition() + desiredTurnBR;
+            m_BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, desiredTurnBR*speedLimit/90.0);
 
             frc::SmartDashboard::PutNumber("MFL", driveFL);
             frc::SmartDashboard::PutNumber("MFR", driveFR);
             frc::SmartDashboard::PutNumber("MBL", driveBL);
             frc::SmartDashboard::PutNumber("MBR", driveBR);
             
-            frc::SmartDashboard::PutNumber("AFL", desiredAFL);
-            frc::SmartDashboard::PutNumber("AFR", moduleDesiredStates.fra);
-            frc::SmartDashboard::PutNumber("ABL", moduleDesiredStates.bla);
-            frc::SmartDashboard::PutNumber("ABR", moduleDesiredStates.bra);
+            frc::SmartDashboard::PutNumber("AFL", desiredTurnFL);
+            frc::SmartDashboard::PutNumber("AFR", desiredTurnFR);
+            frc::SmartDashboard::PutNumber("ABL", desiredTurnBL);
+            frc::SmartDashboard::PutNumber("ABR", desiredTurnBR);
 
-            frc::SmartDashboard::PutNumber("Distance", diffFL);
+            frc::SmartDashboard::PutNumber("Distance", distanceFL);
             frc::SmartDashboard::PutNumber("Current", FLCANCoder.GetPosition());
             frc::SmartDashboard::PutNumber("Desired", relativeAFL);
             frc::SmartDashboard::PutNumber("Yaw", m_navX.GetAngle());
@@ -252,17 +257,21 @@ class Robot : public frc::TimedRobot
             {
                 m_navX.ZeroYaw();
             }
-
-            // m_FLDriveMotor.Set(ControlMode::PercentOutput, moduleDesiredStates.flm);
-            // m_FRDriveMotor.Set(ControlMode::PercentOutput, moduleDesiredStates.frm);
-            // m_BLDriveMotor.Set(ControlMode::PercentOutput, moduleDesiredStates.blm);
-            // m_BRDriveMotor.Set(ControlMode::PercentOutput, moduleDesiredStates.brm);
+            driveFL = moduleDesiredStates.flm*magnitudeOptimization(FLCANCoder.GetPosition(), moduleDesiredStates.fla);
+            driveFR = moduleDesiredStates.frm*magnitudeOptimization(FRCANCoder.GetPosition(), moduleDesiredStates.fra);
+            driveBL = moduleDesiredStates.blm*magnitudeOptimization(BLCANCoder.GetPosition(), moduleDesiredStates.bla);
+            driveBR = moduleDesiredStates.brm*magnitudeOptimization(BRCANCoder.GetPosition(), moduleDesiredStates.bra);
+                
+            m_FLDriveMotor.Set(ControlMode::PercentOutput, driveFL);
+            m_FRDriveMotor.Set(ControlMode::PercentOutput, driveFR);
+            m_BLDriveMotor.Set(ControlMode::PercentOutput, driveBL);
+            m_BRDriveMotor.Set(ControlMode::PercentOutput, driveBR);
         }
 
     private:
         frc::XboxController m_Controller{0};
         // ctre::phoenix::sensors::CANCoderConfiguration encoderturn;
-        frc2::PIDController pid{0.01, 0, 0};
+        frc2::PIDController pid{0.0009, 0, 0};
 
         // Drive Motors
         TalonFX m_FLDriveMotor{3};
