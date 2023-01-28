@@ -6,7 +6,7 @@
 #include <AHRS.h>
 #include <ctre/phoenix/sensors/WPI_CANCoder.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <units/velocity.h>
+#include <frc/controller/PIDController.h>
 
 #include "constants.h"
 #include "helper.h"
@@ -44,10 +44,8 @@ double slewDBR;
 
 double rotVectMulti;
 double leftTrig=mathConst::rotationVectorMultiplier;
-double driveExponent;
-double rightTrig=mathConst::driveExponent;
-
-
+double speedLimit;
+double rightTrig=mathConst::speedLimit;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -76,7 +74,7 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     gyro = getRadian(gyro);
     xLeft = deadband(xLeft);
     yLeft = deadband(yLeft);
-    xRight = deadbandFix(deadband(xRight));
+    xRight = deadband(xRight);
 
     Point posVector = Point(0.0, 0.0);
     double joystickMagnitude = magnitude(xLeft, yLeft);
@@ -112,13 +110,13 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     // Divide by largest value greater than 100% to limit all magnitudes to 100% at max whilst maintaining relative rotational speeds
     // Limiting Scalar also applies the motor speed limit cap
     double magnitudes[4] = {magnitude(rawFL.x, rawFL.y), magnitude(rawFR.x, rawFR.y), magnitude(rawBL.x, rawBL.y), magnitude(rawBR.x, rawBR.y)};
-    double limitingScalar = findMax(magnitudes, sizeof(magnitudes) / sizeof(magnitudes[0]));
+    double limitingScalar = speedLimit / findMax(magnitudes, sizeof(magnitudes) / sizeof(magnitudes[0]));
     
     // Convert to Polar vectors for speed and direction for swerve modules
-    Point physFL = Point(magnitudes[0]/limitingScalar, atan2(rawFL.x, rawFL.y));
-    Point physFR = Point(magnitudes[1]/limitingScalar, atan2(rawFR.x, rawFR.y));
-    Point physBL = Point(magnitudes[2]/limitingScalar, atan2(rawBL.x, rawBL.y));
-    Point physBR = Point(magnitudes[3]/limitingScalar, atan2(rawBR.x, rawBR.y));
+    Point physFL = Point(limitingScalar * magnitudes[0], atan2(rawFL.x, rawFL.y));
+    Point physFR = Point(limitingScalar * magnitudes[1], atan2(rawFR.x, rawFR.y));
+    Point physBL = Point(limitingScalar * magnitudes[2], atan2(rawBL.x, rawBL.y));
+    Point physBR = Point(limitingScalar * magnitudes[3], atan2(rawBR.x, rawBR.y));
 
     return swerveModule(physFL.x, getDegree(physFL.y), physFR.x, getDegree(physFR.y), physBL.x, getDegree(physBL.y), physBR.x, getDegree(physBR.y));
 }
@@ -150,27 +148,6 @@ class Robot : public frc::TimedRobot
             FRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
-            
-            FLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            FRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            BLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            BRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            
-            desiredTurnFL=FLCANCoder.GetPosition();
-            desiredTurnFR=FRCANCoder.GetPosition();
-            desiredTurnBL=BLCANCoder.GetPosition();
-            desiredTurnBR=BRCANCoder.GetPosition();
-
-            m_FLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-            m_FRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-            m_BLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-            m_BRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-
-            m_FLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-            m_FRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-            m_BLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-            m_BRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-
         }
         void TeleopPeriodic() override
         {
@@ -212,10 +189,10 @@ class Robot : public frc::TimedRobot
             
             // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
 
-            driveFL = driveCalcs(moduleDesiredStates.flm, FLCANCoder.GetPosition(), moduleDesiredStates.fla, driveExponent);
-            driveFR = driveCalcs(moduleDesiredStates.frm, FRCANCoder.GetPosition(), moduleDesiredStates.fra, driveExponent);
-            driveBL = driveCalcs(moduleDesiredStates.blm, BLCANCoder.GetPosition(), moduleDesiredStates.bla, driveExponent);
-            driveBR = driveCalcs(moduleDesiredStates.brm, BRCANCoder.GetPosition(), moduleDesiredStates.bra, driveExponent);
+            driveFL = driveCalcs(moduleDesiredStates.flm, FLCANCoder.GetPosition(), moduleDesiredStates.fla);
+            driveFR = driveCalcs(moduleDesiredStates.frm, FRCANCoder.GetPosition(), moduleDesiredStates.fra);
+            driveBL = driveCalcs(moduleDesiredStates.blm, BLCANCoder.GetPosition(), moduleDesiredStates.bla);
+            driveBR = driveCalcs(moduleDesiredStates.brm, BRCANCoder.GetPosition(), moduleDesiredStates.bra);
             
             // driveFR = moduleDesiredStates.frm*magnitudeOptimization(FRCANCoder.GetPosition(), moduleDesiredStates.fra);
             // driveBL = moduleDesiredStates.blm*magnitudeOptimization(BLCANCoder.GetPosition(), moduleDesiredStates.bla);
@@ -225,7 +202,7 @@ class Robot : public frc::TimedRobot
             slewDFR = slew(slewDFR, driveFR);
             slewDBL = slew(slewDBL, driveBL);
             slewDBR = slew(slewDBR, driveBR);
-            
+
             // These negatives are just arbitrary based on zeroing and i was just too lazy to zero when testing
             m_FLDriveMotor.Set(ControlMode::PercentOutput, slewDFL);
             m_FRDriveMotor.Set(ControlMode::PercentOutput, slewDFR);
@@ -239,23 +216,13 @@ class Robot : public frc::TimedRobot
             frc::SmartDashboard::PutNumber("MBL", slewDBL);
             frc::SmartDashboard::PutNumber("MBR", slewDBR);
             
-            frc::SmartDashboard::PutNumber("FL Current", m_FLDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("FR Current", m_FRDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("BL Current", m_BLDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("BR Current", m_BRDriveMotor.GetSupplyCurrent());
-            
             // Desired turn angles (degrees)
             frc::SmartDashboard::PutNumber("AFL", desiredTurnFL);
             frc::SmartDashboard::PutNumber("AFR", desiredTurnFR);
             frc::SmartDashboard::PutNumber("ABL", desiredTurnBL);
             frc::SmartDashboard::PutNumber("ABR", desiredTurnBR);
-
-            frc::SmartDashboard::PutNumber("FL CANCoder", FLCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("FR CANCoder", FRCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("BL CANCoder", BLCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("BR CANCoder", BRCANCoder.GetPosition());
             
-            frc::SmartDashboard::PutNumber("Exponent", driveExponent);
+            frc::SmartDashboard::PutNumber("Speed Lim", speedLimit);
             frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
             
             // Gyro angle (degrees)
@@ -272,7 +239,7 @@ class Robot : public frc::TimedRobot
             // this is getting deleted no matter what; stays until a rotation:translation ratio is determined
             if (m_Controller.GetLeftTriggerAxis())
             {
-                rotVectMulti = 3*m_Controller.GetLeftTriggerAxis();
+                rotVectMulti = m_Controller.GetLeftTriggerAxis();
                 if(m_Controller.GetAButton()){
                     leftTrig = rotVectMulti;
                 }
@@ -282,26 +249,18 @@ class Robot : public frc::TimedRobot
                 rotVectMulti = leftTrig;
             }
             // This needs to be mapped to a proper button at some point; DPad?
-            if (m_Controller.GetRightTriggerAxis()>0.34)
+            if (m_Controller.GetRightTriggerAxis())
             {
-                driveExponent = 3*m_Controller.GetRightTriggerAxis();
+                speedLimit = m_Controller.GetRightTriggerAxis();
                 if(m_Controller.GetAButton()){
-                    rightTrig = driveExponent;
+                    rightTrig = speedLimit;
                 }
             }
             else
             {
-                driveExponent = rightTrig;
+                speedLimit = rightTrig;
             }
 // ----------------------
-
-            // if(m_Controller.GetBButton())
-            // {
-            //     FLCANCoder.ConfigMagnetOffset(fmod(FLCANCoder.GetPosition(),360));
-            //     FRCANCoder.ConfigMagnetOffset(fmod(FRCANCoder.GetPosition(),360));
-            //     BLCANCoder.ConfigMagnetOffset(fmod(BLCANCoder.GetPosition(),360));
-            //     BRCANCoder.ConfigMagnetOffset(fmod(BRCANCoder.GetPosition(),360));
-            // }
         }
 
     private:

@@ -1,8 +1,7 @@
 #ifndef HELPERS_H
 #include <cmath>
 #include "constants.h"
-#include <units/angle.h>
-#include <units/time.h>
+
 
 // magnitude of vector to convert from Cartesian to Polar
 double magnitude(double x, double y) 
@@ -101,22 +100,12 @@ double swerveDeadband(double swerveTurn)
     return swerveTurn;
 }
 
-double deadbandFix(double magnitude)
+double driveCalcs(double magnitude, double CANCoder, double angle)
 {
     if(abs(magnitude) >= mathConst::deadband)
     {
         magnitude = mathConst::deadbandOffset*(magnitude+mathConst::deadband*2*(std::signbit(magnitude)-0.5));
     }
-    return magnitude;
+    return magnitude*magnitudeOptimization(CANCoder, angle);
 }
-
-double driveCalcs(double magnitude, double CANCoder, double angle, double exponent)
-{
-    if(abs(magnitude) >= mathConst::deadband)
-    {
-        magnitude = mathConst::deadbandOffset*(magnitude+mathConst::deadband*2*(std::signbit(magnitude)-0.5));
-    }
-    return pow(magnitude, exponent)*magnitudeOptimization(CANCoder, angle);
-}
-
 #endif

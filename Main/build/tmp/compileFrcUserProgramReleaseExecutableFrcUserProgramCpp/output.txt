@@ -1,4 +1,4 @@
-See file:///home/dwrd/Downloads/Swerve%20Alcohol%20Iteration/TenTonFRC-ChargeUp/Ver.%204%20Dpad%20Zero%20and%20Slew/build/tmp/compileFrcUserProgramReleaseExecutableFrcUserProgramCpp/output.txt for all output for compileFrcUserProgramReleaseExecutableFrcUserProgramCpp.
+See file:///home/dwrd/Downloads/Swerve%20Iterations/TenTonFRC-ChargeUp/Main/build/tmp/compileFrcUserProgramReleaseExecutableFrcUserProgramCpp/output.txt for all output for compileFrcUserProgramReleaseExecutableFrcUserProgramCpp.
 compiling Robot.cpp successful.
 
-Finished compileFrcUserProgramReleaseExecutableFrcUserProgramCpp, see full log file:///home/dwrd/Downloads/Swerve%20Alcohol%20Iteration/TenTonFRC-ChargeUp/Ver.%204%20Dpad%20Zero%20and%20Slew/build/tmp/compileFrcUserProgramReleaseExecutableFrcUserProgramCpp/output.txt.
+Finished compileFrcUserProgramReleaseExecutableFrcUserProgramCpp, see full log file:///home/dwrd/Downloads/Swerve%20Iterations/TenTonFRC-ChargeUp/Main/build/tmp/compileFrcUserProgramReleaseExecutableFrcUserProgramCpp/output.txt.

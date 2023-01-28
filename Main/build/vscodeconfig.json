@@ -39,7 +39,7 @@
       "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-      "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/",
+      "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/",
       "/home/dwrd/.gradle/caches/transforms-3/99ee6c7cfea66821d20777f978e8d47c/transformed/wpilibNewCommands-cpp-2023.1.1-sources/",
       "/home/dwrd/.gradle/caches/transforms-3/b00ff6cec051ee527421044e916f9383/transformed/navx-frc-cpp-2023.0.1-sources/",
       "/home/dwrd/.gradle/caches/transforms-3/bf35dba7b2daff48000f497d185f87f0/transformed/wpilibc-cpp-2023.1.1-sources/",
@@ -93,7 +93,7 @@
       "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-      "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+      "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
     ],
     "binaries": [
       {
@@ -102,7 +102,7 @@
           {
             "source": {
               "srcDirs": [
-                "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/cpp/"
+                "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/cpp/"
               ],
               "includes": [
                 "**/*.cpp",
@@ -112,7 +112,7 @@
             },
             "exportedHeaders": {
               "srcDirs": [
-                "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+                "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
               ],
               "includes": [],
               "excludes": []
@@ -162,7 +162,7 @@
           "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
           "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
           "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-          "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+          "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
         ],
         "sharedLibrary": false,
         "executable": true
@@ -172,7 +172,7 @@
       {
         "source": {
           "srcDirs": [
-            "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/cpp/"
+            "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/cpp/"
           ],
           "includes": [
             "**/*.cpp",
@@ -204,7 +204,7 @@
       {
         "source": {
           "srcDirs": [
-            "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+            "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
           ],
           "includes": [],
           "excludes": []
@@ -275,7 +275,7 @@
       "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-      "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/",
+      "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/",
       "/home/dwrd/.gradle/caches/transforms-3/99ee6c7cfea66821d20777f978e8d47c/transformed/wpilibNewCommands-cpp-2023.1.1-sources/",
       "/home/dwrd/.gradle/caches/transforms-3/b00ff6cec051ee527421044e916f9383/transformed/navx-frc-cpp-2023.0.1-sources/",
       "/home/dwrd/.gradle/caches/transforms-3/bf35dba7b2daff48000f497d185f87f0/transformed/wpilibc-cpp-2023.1.1-sources/",
@@ -329,7 +329,7 @@
       "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
       "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-      "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+      "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
     ],
     "binaries": [
       {
@@ -338,7 +338,7 @@
           {
             "source": {
               "srcDirs": [
-                "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/cpp/"
+                "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/cpp/"
               ],
               "includes": [
                 "**/*.cpp",
@@ -348,7 +348,7 @@
             },
             "exportedHeaders": {
               "srcDirs": [
-                "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+                "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
               ],
               "includes": [],
               "excludes": []
@@ -397,7 +397,7 @@
           "/home/dwrd/.gradle/caches/transforms-3/bf6d5be33d503b240ac4106fd05f21b0/transformed/cscore-cpp-2023.1.1-headers/",
           "/home/dwrd/.gradle/caches/transforms-3/79b84e11b6e7a4511c47e77ff54bf6fb/transformed/apriltag-cpp-2023.1.1-headers/",
           "/home/dwrd/.gradle/caches/transforms-3/a6e485e215981dd6a40a90e5197fe679/transformed/opencv-cpp-4.6.0-4-headers/",
-          "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+          "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
         ],
         "sharedLibrary": false,
         "executable": true
@@ -407,7 +407,7 @@
       {
         "source": {
           "srcDirs": [
-            "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/cpp/"
+            "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/cpp/"
           ],
           "includes": [
             "**/*.cpp",
@@ -438,7 +438,7 @@
       {
         "source": {
           "srcDirs": [
-            "/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include/"
+            "/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include/"
           ],
           "includes": [],
           "excludes": []

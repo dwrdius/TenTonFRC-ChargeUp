@@ -16,7 +16,7 @@ c++
 -g
 -nostdinc
 -I
-"/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/src/main/include"
+"/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/src/main/include"
 -I
 /home/dwrd/.gradle/caches/transforms-3/a47a68dfd7cc99c2c5bd570b076040b1/transformed/wpilibNewCommands-cpp-2023.1.1-headers
 -I

@@ -1,6 +1,6 @@
 -o
-"/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/build/exe/frcUserProgram/debug/frcUserProgram"
-"/home/dwrd/Downloads/Swerve Alcohol Iteration/TenTonFRC-ChargeUp/Ver. 4 Dpad Zero and Slew/build/objs/frcUserProgram/debug/frcUserProgramCpp/9760xtgdau9jsoxxi90ozrpww/Robot.o"
+"/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/build/exe/frcUserProgram/debug/frcUserProgram"
+"/home/dwrd/Downloads/Swerve Iterations/TenTonFRC-ChargeUp/Main/build/objs/frcUserProgram/debug/frcUserProgramCpp/9760xtgdau9jsoxxi90ozrpww/Robot.o"
 /home/dwrd/.gradle/caches/transforms-3/9d85ab6e4b923363bb1d4917d9fc579e/transformed/wpilibNewCommands-cpp-2023.1.1-linuxathenadebug/linux/athena/shared/libwpilibNewCommandsd.so
 /home/dwrd/.gradle/caches/transforms-3/4bad1fa0f5e155574602b78f8da1a880/transformed/PlayingWithFusion-cpp-2023.00.17-linuxathenastaticdebug/linux/athena/static/libPlayingWithFusion.a
 /home/dwrd/.gradle/caches/transforms-3/1d4db92b1e8585196a20d46ea069f174/transformed/PlayingWithFusion-driver-2023.00.17-linuxathenadebug/linux/athena/shared/libPlayingWithFusionDriver.so
