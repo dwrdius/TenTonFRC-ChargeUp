@@ -1,8 +1,6 @@
 #ifndef HELPERS_H
 #include <cmath>
 #include "constants.h"
-#include <units/angle.h>
-#include <units/time.h>
 
 // magnitude of vector to convert from Cartesian to Polar
 double magnitude(double x, double y) 
@@ -70,17 +68,6 @@ double getRadian(double x)
     return x * M_PI / 180.0;
 }
 
-// Deadband for joystick
-// prevents drift at values close to 0
-double deadband(double joystickInput)
-{
-    if (abs(joystickInput) <= mathConst::deadband)
-    {
-        return 0.0;
-    }
-    return joystickInput;
-}
-
 double slew(double currentPercentage, double desiredPercentage)
 {
     double diff = desiredPercentage-currentPercentage;
@@ -101,22 +88,43 @@ double swerveDeadband(double swerveTurn)
     return swerveTurn;
 }
 
-double deadbandFix(double magnitude)
+// Deadband for joystick
+// prevents drift at values close to 0
+// Else converts range from deadband-1 to 0-1
+double deadband(double joystickInput)
 {
-    if(abs(magnitude) >= mathConst::deadband)
+    if (abs(joystickInput) <= mathConst::deadband)
     {
-        magnitude = mathConst::deadbandOffset*(magnitude+mathConst::deadband*2*(std::signbit(magnitude)-0.5));
+        return 0.0;
     }
-    return magnitude;
+    else
+    {
+        joystickInput = mathConst::deadbandOffset*(joystickInput+mathConst::deadband*2*(std::signbit(joystickInput)-0.5));
+    }
+    return joystickInput;
 }
 
 double driveCalcs(double magnitude, double CANCoder, double angle, double exponent)
 {
-    if(abs(magnitude) >= mathConst::deadband)
-    {
-        magnitude = mathConst::deadbandOffset*(magnitude+mathConst::deadband*2*(std::signbit(magnitude)-0.5));
-    }
     return pow(magnitude, exponent)*magnitudeOptimization(CANCoder, angle);
+}
+
+double swerveCalcs(double CANCoder, double desiredAngle)
+{
+    return mathConst::swerveMotorSpeed/90.0*angleOptimisation(CANCoder, desiredAngle);
+}
+
+void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, double CANCoder, double desiredTurn, double *driveState, double desiredMag, double desiredArg, double exponent)
+{
+    // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
+            // limit motor turn speed
+    *swerveState = swerveDeadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn)));
+    m_swerve.Set(TalonFXControlMode::PercentOutput, *swerveState);
+
+    // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
+    // REMOVE EXPONENT REQUIREMENT AFTER DECIDING ON A CERTAIN EXPONENT
+    *driveState = slew(*driveState, driveCalcs(desiredMag, CANCoder, desiredArg, exponent));
+    m_drive.Set(ControlMode::PercentOutput, *driveState);
 }
 
 #endif

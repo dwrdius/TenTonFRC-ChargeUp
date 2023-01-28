@@ -6,7 +6,6 @@
 #include <AHRS.h>
 #include <ctre/phoenix/sensors/WPI_CANCoder.h>
 #include <frc/smartdashboard/SmartDashboard.h>
-#include <units/velocity.h>
 
 #include "constants.h"
 #include "helper.h"
@@ -30,16 +29,16 @@ double driveBL;
 double driveBR;
 
 // Intermediary Variable for implementing slew to swerve motors
-double slewAFL;
-double slewAFR;
-double slewABL;
-double slewABR;
+double FLSwerveState;
+double FRSwerveState;
+double BLSwerveState;
+double BRSwerveState;
 
 // Intermediary Variable for implementing slew to drive motors
-double slewDFL;
-double slewDFR;
-double slewDBL;
-double slewDBR;
+double FLDriveState;
+double FRDriveState;
+double BLDriveState;
+double BRDriveState;
 
 
 double rotVectMulti;
@@ -53,10 +52,10 @@ double rightTrig=mathConst::driveExponent;
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
 // percentage magnitude
 // degree angle
-struct swerveModule
+struct desiredSwerveModule
 {
     double flm, fla, frm, fra, blm, bla, brm, bra;
-    swerveModule(double flm, double fla, double frm, double fra, double blm, double bla, double brm, double bra) : flm(flm), fla(fla), frm(frm), fra(fra), blm(blm), bla(bla), brm(brm), bra(bra) {}
+    desiredSwerveModule(double flm, double fla, double frm, double fra, double blm, double bla, double brm, double bra) : flm(flm), fla(fla), frm(frm), fra(fra), blm(blm), bla(bla), brm(brm), bra(bra) {}
 };
 
 // Stores a vector
@@ -70,13 +69,13 @@ struct Point
 // Automatically applies deadbands
 // Outputs a swerveModule object 
 // (percentage speeds and angles in the order FL, FR, BL, BR)
-swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double gyro)
+desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double gyro)
 {
     // cmath reads radians; applies deadbands
     gyro = getRadian(gyro);
     xLeft = deadband(xLeft);
     yLeft = deadband(yLeft);
-    xRight = deadbandFix(deadband(xRight));
+    xRight = deadband(xRight);
 
     Point posVector = Point(0.0, 0.0);
     double joystickMagnitude = magnitude(xLeft, yLeft);
@@ -94,7 +93,7 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     else if (abs(xRight) < 0.1) // the < 0.1 is another reduncancy that is within the deadband
     {
         // if no joystick input, return exit code
-        return swerveModule(0.0, 1000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        return desiredSwerveModule(0.0, 1000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
     // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
@@ -120,7 +119,7 @@ swerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double 
     Point physBL = Point(magnitudes[2]/limitingScalar, atan2(rawBL.x, rawBL.y));
     Point physBR = Point(magnitudes[3]/limitingScalar, atan2(rawBR.x, rawBR.y));
 
-    return swerveModule(physFL.x, getDegree(physFL.y), physFR.x, getDegree(physFR.y), physBL.x, getDegree(physBL.y), physBR.x, getDegree(physBR.y));
+    return desiredSwerveModule(physFL.x, getDegree(physFL.y), physFR.x, getDegree(physFR.y), physBL.x, getDegree(physBL.y), physBR.x, getDegree(physBR.y));
 }
 
 class Robot : public frc::TimedRobot
@@ -178,7 +177,7 @@ class Robot : public frc::TimedRobot
             // .flm is "Front left magnitude" (percentage)
             // .fla is "Front left angle" (degrees)
             // fl[], fr[], bl[], br[]
-            swerveModule moduleDesiredStates = swerveKinematics(m_Controller.GetLeftX(), m_Controller.GetLeftY(), m_Controller.GetRightX(), m_navX.GetAngle());
+            desiredSwerveModule moduleDesiredStates = swerveKinematics(m_Controller.GetLeftX(), m_Controller.GetLeftY(), m_Controller.GetRightX(), m_navX.GetAngle());
             
             // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
             // this only updates the "desired angle" read by the turn motors if the exit code is not detected
@@ -192,52 +191,17 @@ class Robot : public frc::TimedRobot
                 desiredTurnBR = moduleDesiredStates.bra;
             }
 
-            // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
-            // limit motor turn speed
-            desiredTurnPercentFL= mathConst::swerveMotorSpeed/90.0*angleOptimisation(FLCANCoder.GetPosition(), desiredTurnFL);
-            slewAFL = swerveDeadband(slew(slewAFL, desiredTurnPercentFL));
-            m_FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, slewAFL);
-
-            desiredTurnPercentFR = mathConst::swerveMotorSpeed/90.0*angleOptimisation(FRCANCoder.GetPosition(), desiredTurnFR);
-            slewAFR = swerveDeadband(slew(slewAFR, desiredTurnPercentFR));
-            m_FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, slewAFR);
-
-            desiredTurnPercentBL = mathConst::swerveMotorSpeed/90.0*angleOptimisation(BLCANCoder.GetPosition(), desiredTurnBL);
-            slewABL = swerveDeadband(slew(slewABL, desiredTurnPercentBL));
-            m_BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, slewABL);
- 
-            desiredTurnPercentBR = mathConst::swerveMotorSpeed/90.0*angleOptimisation(BRCANCoder.GetPosition(), desiredTurnBR);
-            slewABR = swerveDeadband(slew(slewABR, desiredTurnPercentBR));
-            m_BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, slewABR);
+            setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetPosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
+            setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetPosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
+            setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetPosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
+            setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetPosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
             
-            // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
-
-            driveFL = driveCalcs(moduleDesiredStates.flm, FLCANCoder.GetPosition(), moduleDesiredStates.fla, driveExponent);
-            driveFR = driveCalcs(moduleDesiredStates.frm, FRCANCoder.GetPosition(), moduleDesiredStates.fra, driveExponent);
-            driveBL = driveCalcs(moduleDesiredStates.blm, BLCANCoder.GetPosition(), moduleDesiredStates.bla, driveExponent);
-            driveBR = driveCalcs(moduleDesiredStates.brm, BRCANCoder.GetPosition(), moduleDesiredStates.bra, driveExponent);
-            
-            // driveFR = moduleDesiredStates.frm*magnitudeOptimization(FRCANCoder.GetPosition(), moduleDesiredStates.fra);
-            // driveBL = moduleDesiredStates.blm*magnitudeOptimization(BLCANCoder.GetPosition(), moduleDesiredStates.bla);
-            // driveBR = moduleDesiredStates.brm*magnitudeOptimization(BRCANCoder.GetPosition(), moduleDesiredStates.bra);
-            
-            slewDFL = slew(slewDFL, driveFL);
-            slewDFR = slew(slewDFR, driveFR);
-            slewDBL = slew(slewDBL, driveBL);
-            slewDBR = slew(slewDBR, driveBR);
-            
-            // These negatives are just arbitrary based on zeroing and i was just too lazy to zero when testing
-            m_FLDriveMotor.Set(ControlMode::PercentOutput, slewDFL);
-            m_FRDriveMotor.Set(ControlMode::PercentOutput, slewDFR);
-            m_BLDriveMotor.Set(ControlMode::PercentOutput, slewDBL);
-            m_BRDriveMotor.Set(ControlMode::PercentOutput, slewDBR);
-
         // Debug Math Outputs
             // Drive motor speeds (percentage)
-            frc::SmartDashboard::PutNumber("MFL", slewDFL);
-            frc::SmartDashboard::PutNumber("MFR", slewDFR);
-            frc::SmartDashboard::PutNumber("MBL", slewDBL);
-            frc::SmartDashboard::PutNumber("MBR", slewDBR);
+            frc::SmartDashboard::PutNumber("MFL", FLSwerveState);
+            frc::SmartDashboard::PutNumber("MFR", FRSwerveState);
+            frc::SmartDashboard::PutNumber("MBL", BLSwerveState);
+            frc::SmartDashboard::PutNumber("MBR", BRSwerveState);
             
             frc::SmartDashboard::PutNumber("FL Current", m_FLDriveMotor.GetSupplyCurrent());
             frc::SmartDashboard::PutNumber("FR Current", m_FRDriveMotor.GetSupplyCurrent());
