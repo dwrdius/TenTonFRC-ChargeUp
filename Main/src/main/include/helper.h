@@ -1,6 +1,7 @@
 #ifndef HELPERS_H
 #include <cmath>
 #include "constants.h"
+#include <ctre/Phoenix.h>
 
 // magnitude of vector to convert from Cartesian to Polar
 double magnitude(double x, double y) 
