@@ -17,17 +17,6 @@ double desiredTurnFR;
 double desiredTurnBL;
 double desiredTurnBR;
 
-double desiredTurnPercentFL;
-double desiredTurnPercentFR;
-double desiredTurnPercentBL;
-double desiredTurnPercentBR;
-
-// Processed drive motor speed
-double driveFL;
-double driveFR;
-double driveBL;
-double driveBR;
-
 // Intermediary Variable for implementing slew to swerve motors
 double FLSwerveState;
 double FRSwerveState;
@@ -45,8 +34,6 @@ double rotVectMulti;
 double leftTrig=mathConst::rotationVectorMultiplier;
 double driveExponent;
 double rightTrig=mathConst::driveExponent;
-
-
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -97,15 +84,15 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
     }
 
     // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
-    double rotationScalar = rotVectMulti * xRight / magnitude(mathConst::relativeX, mathConst::relativeY);
+    double rotationScalar = -rotVectMulti * xRight / magnitude(mathConst::relativeX, mathConst::relativeY);
 
     // Apply rotation vectors to positional vectors to create the combined vector
     // negatives and "y, x" are assigned (negative reciprocal = perpendicular line)
     // actually the y values were negated again because it just worked. I don't know if I did math wrong, but it worked so there's another arbitrary negation
-    Point rawFL = Point((rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawFR = Point((rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawBL = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawBR = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
+    Point rawFL = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
+    Point rawFR = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
+    Point rawBL = Point((rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
+    Point rawBR = Point((rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
 
     // compares magnitudes of resulting vectors to see if any composite vector (rotation + position) exceeded "100%" output speed. 
     // Divide by largest value greater than 100% to limit all magnitudes to 100% at max whilst maintaining relative rotational speeds
@@ -141,24 +128,20 @@ class Robot : public frc::TimedRobot
 
         // Uncomment this, run it, deploy with this commented out again, do not run, turn off robot, zero wheels manually, boot
         // Zeros CANCoders (if someone finds a better way, PLEASE implement it ASAP)
-            // FLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // FRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // BLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // BRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            
             FLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             FRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             
+            // FLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // FRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // BLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
+            // BRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
             FLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
             FRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
             BLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
             BRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            
-            desiredTurnFL=FLCANCoder.GetPosition();
-            desiredTurnFR=FRCANCoder.GetPosition();
-            desiredTurnBL=BLCANCoder.GetPosition();
-            desiredTurnBR=BRCANCoder.GetPosition();
 
             m_FLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
             m_FRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
@@ -169,6 +152,16 @@ class Robot : public frc::TimedRobot
             m_FRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
             m_BLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
             m_BRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
+            
+            FLCANCoder.ConfigMagnetOffset(-34.541016);
+            FRCANCoder.ConfigMagnetOffset(173.144531);
+            BLCANCoder.ConfigMagnetOffset(55.107422);
+            BRCANCoder.ConfigMagnetOffset(-118.564453);
+
+            desiredTurnFL=FLCANCoder.GetAbsolutePosition();
+            desiredTurnFR=FRCANCoder.GetAbsolutePosition();
+            desiredTurnBL=BLCANCoder.GetAbsolutePosition();
+            desiredTurnBR=BRCANCoder.GetAbsolutePosition();
 
         }
         void TeleopPeriodic() override
@@ -191,22 +184,17 @@ class Robot : public frc::TimedRobot
                 desiredTurnBR = moduleDesiredStates.bra;
             }
 
-            setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetPosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
-            setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetPosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
-            setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetPosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
-            setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetPosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
+            setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
+            setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra, driveExponent);
+            setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla, driveExponent);
+            setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.brm, moduleDesiredStates.bra, driveExponent);
             
         // Debug Math Outputs
             // Drive motor speeds (percentage)
-            frc::SmartDashboard::PutNumber("MFL", FLSwerveState);
-            frc::SmartDashboard::PutNumber("MFR", FRSwerveState);
-            frc::SmartDashboard::PutNumber("MBL", BLSwerveState);
-            frc::SmartDashboard::PutNumber("MBR", BRSwerveState);
-            
-            frc::SmartDashboard::PutNumber("FL Current", m_FLDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("FR Current", m_FRDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("BL Current", m_BLDriveMotor.GetSupplyCurrent());
-            frc::SmartDashboard::PutNumber("BR Current", m_BRDriveMotor.GetSupplyCurrent());
+            frc::SmartDashboard::PutNumber("MFL", FLDriveState);
+            frc::SmartDashboard::PutNumber("MFR", FRDriveState);
+            frc::SmartDashboard::PutNumber("MBL", BLDriveState);
+            frc::SmartDashboard::PutNumber("MBR", BRDriveState);
             
             // Desired turn angles (degrees)
             frc::SmartDashboard::PutNumber("AFL", desiredTurnFL);
@@ -214,10 +202,10 @@ class Robot : public frc::TimedRobot
             frc::SmartDashboard::PutNumber("ABL", desiredTurnBL);
             frc::SmartDashboard::PutNumber("ABR", desiredTurnBR);
 
-            frc::SmartDashboard::PutNumber("FL CANCoder", FLCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("FR CANCoder", FRCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("BL CANCoder", BLCANCoder.GetPosition());
-            frc::SmartDashboard::PutNumber("BR CANCoder", BRCANCoder.GetPosition());
+            frc::SmartDashboard::PutNumber("FL CANCoder", FLCANCoder.GetAbsolutePosition());
+            frc::SmartDashboard::PutNumber("FR CANCoder", FLCANCoder.GetAbsolutePosition());
+            frc::SmartDashboard::PutNumber("BL CANCoder", BLCANCoder.GetAbsolutePosition());
+            frc::SmartDashboard::PutNumber("BR CANCoder", BRCANCoder.GetAbsolutePosition());
             
             frc::SmartDashboard::PutNumber("Exponent", driveExponent);
             frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
@@ -258,14 +246,6 @@ class Robot : public frc::TimedRobot
                 driveExponent = rightTrig;
             }
 // ----------------------
-
-            // if(m_Controller.GetBButton())
-            // {
-            //     FLCANCoder.ConfigMagnetOffset(fmod(FLCANCoder.GetPosition(),360));
-            //     FRCANCoder.ConfigMagnetOffset(fmod(FRCANCoder.GetPosition(),360));
-            //     BLCANCoder.ConfigMagnetOffset(fmod(BLCANCoder.GetPosition(),360));
-            //     BRCANCoder.ConfigMagnetOffset(fmod(BRCANCoder.GetPosition(),360));
-            // }
         }
 
     private:
