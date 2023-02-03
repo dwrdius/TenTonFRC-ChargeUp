@@ -128,4 +128,30 @@ void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, d
     m_drive.Set(ControlMode::PercentOutput, *driveState);
 }
 
+
+
+                                //    const double xInputCoords[4] = {0,0,0,0};
+                                //     const double yInputCoords[4] = {0,0,0,0};
+
+                                //     const double xCoords[4] = wheelCoordinateProcessor(0);
+                                //     const double yCoords[4] = wheelCoordinateProcessor(1);
+
+                                    
+                                // // 0 for x coords; 1 for y coords. 
+                                // // Converts to reciprocal unit vector
+                                // double wheelCoordinateProcessor (int switcher)
+                                // {
+                                //     double Coords[4];
+                                //     switch (switcher){
+                                //         case 0:
+                                //             for (int x = 0; x < 4; x++){
+                                //                 Coords[x] = mathConst::yInputCoords[x] / magnitude(mathConst::xInputCoords[x], mathConst::yInputCoords[x]);
+                                //             }
+                                //         case 1:
+                                //             for (int y = 0; y < 4; y++){
+                                //                 Coords[y] = mathConst::xInputCoords[y] / magnitude(mathConst::xInputCoords[y], mathConst::yInputCoords[y]);
+                                //             }
+                                //     }
+                                //     return *Coords;
+                                // }
 #endif
