@@ -3,10 +3,10 @@
 
 void logSwerveNumber (std::string message, double FL, double FR, double BL, double BR)
 {
-    std::string mFL = "Front Left" + message;
-    std::string mFR = "Front Right" + message;
-    std::string mBL = "Back Left" + message;
-    std::string mBR = "Back Right" + message;
+    std::string mFL = "Front Left " + message;
+    std::string mFR = "Front Right " + message;
+    std::string mBL = "Back Left " + message;
+    std::string mBR = "Back Right " + message;
     
     frc::SmartDashboard::PutNumber(mFL.c_str(), FL);
     frc::SmartDashboard::PutNumber(mFR.c_str(), FR);

@@ -54,9 +54,9 @@ namespace CanIDs {
     const int kBRCANCoder = 12;
 }
 namespace CANCoderOffsets {
-        constexpr double kFrontRight{-34.541016};
-        constexpr double kFrontLeft{173.144531};
-        constexpr double kBackLeft{55.107422};
-        constexpr double kBackRight{-118.564453};
+        constexpr double kFrontLeft{-31.289063};
+        constexpr double kFrontRight{171.914063};
+        constexpr double kBackLeft{56.162109};
+        constexpr double kBackRight{-116.982422};
 }
 #endif
