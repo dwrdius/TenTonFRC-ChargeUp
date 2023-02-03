@@ -1,4 +1,5 @@
 #include <cmath>
+#include <string>
 
 #include <frc/TimedRobot.h>
 #include <ctre/Phoenix.h>
@@ -7,6 +8,7 @@
 #include <ctre/phoenix/sensors/WPI_CANCoder.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 
+#include "logValues.h"
 #include "constants.h"
 #include "helper.h"
 
@@ -89,10 +91,10 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
     // Apply rotation vectors to positional vectors to create the combined vector
     // negatives and "y, x" are assigned (negative reciprocal = perpendicular line)
     // actually the y values were negated again because it just worked. I don't know if I did math wrong, but it worked so there's another arbitrary negation
-    Point rawFL = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawFR = Point(-(rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawBL = Point((rotationScalar * mathConst::relativeY) + posVector.x, (rotationScalar * mathConst::relativeX) + posVector.y);
-    Point rawBR = Point((rotationScalar * mathConst::relativeY) + posVector.x, -(rotationScalar * mathConst::relativeX) + posVector.y);
+    Point rawFL = Point(-(rotationScalar * mathConst::yCoords[0]) + posVector.x, -(rotationScalar * mathConst::xCoords[0]) + posVector.y);
+    Point rawFR = Point(-(rotationScalar * mathConst::yCoords[1]) + posVector.x, -(rotationScalar * mathConst::xCoords[1]) + posVector.y);
+    Point rawBL = Point(-(rotationScalar * mathConst::yCoords[2]) + posVector.x, -(rotationScalar * mathConst::xCoords[2]) + posVector.y);
+    Point rawBR = Point(-(rotationScalar * mathConst::yCoords[3]) + posVector.x, -(rotationScalar * mathConst::xCoords[3]) + posVector.y);
 
     // compares magnitudes of resulting vectors to see if any composite vector (rotation + position) exceeded "100%" output speed. 
     // Divide by largest value greater than 100% to limit all magnitudes to 100% at max whilst maintaining relative rotational speeds
@@ -133,15 +135,6 @@ class Robot : public frc::TimedRobot
             FRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
             BRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
-            
-            // FLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // FRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // BLCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            // BRCANCoder.ConfigSensorInitializationStrategy(BootToZero);
-            FLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            FRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            BLCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
-            BRCANCoder.ConfigSensorInitializationStrategy(BootToAbsolutePosition);
 
             m_FLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
             m_FRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
@@ -153,10 +146,10 @@ class Robot : public frc::TimedRobot
             m_BLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
             m_BRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
             
-            FLCANCoder.ConfigMagnetOffset(-34.541016);
-            FRCANCoder.ConfigMagnetOffset(173.144531);
-            BLCANCoder.ConfigMagnetOffset(55.107422);
-            BRCANCoder.ConfigMagnetOffset(-118.564453);
+            FLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontLeft);
+            FRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontRight);
+            BLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackLeft);
+            BRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackRight);
 
             desiredTurnFL=FLCANCoder.GetAbsolutePosition();
             desiredTurnFR=FRCANCoder.GetAbsolutePosition();
@@ -191,21 +184,24 @@ class Robot : public frc::TimedRobot
             
         // Debug Math Outputs
             // Drive motor speeds (percentage)
-            frc::SmartDashboard::PutNumber("MFL", FLDriveState);
-            frc::SmartDashboard::PutNumber("MFR", FRDriveState);
-            frc::SmartDashboard::PutNumber("MBL", BLDriveState);
-            frc::SmartDashboard::PutNumber("MBR", BRDriveState);
+            logSwerveNumber("Magnitude", FLDriveState, FRDriveState, BLDriveState, BRDriveState);
+            // frc::SmartDashboard::PutNumber("MFL", FLDriveState);
+            // frc::SmartDashboard::PutNumber("MFR", FRDriveState);
+            // frc::SmartDashboard::PutNumber("MBL", BLDriveState);
+            // frc::SmartDashboard::PutNumber("MBR", BRDriveState);
             
             // Desired turn angles (degrees)
-            frc::SmartDashboard::PutNumber("AFL", desiredTurnFL);
-            frc::SmartDashboard::PutNumber("AFR", desiredTurnFR);
-            frc::SmartDashboard::PutNumber("ABL", desiredTurnBL);
-            frc::SmartDashboard::PutNumber("ABR", desiredTurnBR);
+            logSwerveNumber("Desired Angle", desiredTurnFL, desiredTurnFR, desiredTurnBL, desiredTurnBR);
+            // frc::SmartDashboard::PutNumber("AFL", desiredTurnFL);
+            // frc::SmartDashboard::PutNumber("AFR", desiredTurnFR);
+            // frc::SmartDashboard::PutNumber("ABL", desiredTurnBL);
+            // frc::SmartDashboard::PutNumber("ABR", desiredTurnBR);
 
-            frc::SmartDashboard::PutNumber("FL CANCoder", FLCANCoder.GetAbsolutePosition());
-            frc::SmartDashboard::PutNumber("FR CANCoder", FLCANCoder.GetAbsolutePosition());
-            frc::SmartDashboard::PutNumber("BL CANCoder", BLCANCoder.GetAbsolutePosition());
-            frc::SmartDashboard::PutNumber("BR CANCoder", BRCANCoder.GetAbsolutePosition());
+            logSwerveNumber("CANCoder", FLCANCoder.GetAbsolutePosition(), FLCANCoder.GetAbsolutePosition(), BLCANCoder.GetAbsolutePosition(), BRCANCoder.GetAbsolutePosition());
+            // frc::SmartDashboard::PutNumber("FL CANCoder", FLCANCoder.GetAbsolutePosition());
+            // frc::SmartDashboard::PutNumber("FR CANCoder", FLCANCoder.GetAbsolutePosition());
+            // frc::SmartDashboard::PutNumber("BL CANCoder", BLCANCoder.GetAbsolutePosition());
+            // frc::SmartDashboard::PutNumber("BR CANCoder", BRCANCoder.GetAbsolutePosition());
             
             frc::SmartDashboard::PutNumber("Exponent", driveExponent);
             frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
