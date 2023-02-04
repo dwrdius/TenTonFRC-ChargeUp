@@ -1,0 +1,13 @@
+Exponential now applied before calculations so that swerve ratio is not modified
+
+Turning no longer relies on swerve:translation ratio
+
+LogSwerve[Number]/[String] macro added
+Macro for converting ideal values to motor inputs added
+
+Zero now based on absolute value
+
+***
+SOMEONE NEEDS TO FIGURE OUT HOW TO MIGRATE OUT OF Robot.cpp
+- This will become too cluttered to edit in the future unless this is implemented.
+- Someone who is adept in pointers should edit this in a git issue log.
