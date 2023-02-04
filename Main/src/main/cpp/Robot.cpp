@@ -222,9 +222,15 @@ class Robot : public frc::TimedRobot
             }
 // ----------------------
         }
+        void AutonomousInit()
+        {
+            processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
+            
+        }
+
         void AutonomousPeriodic()
         {
-            
+
         }
 
     private:
