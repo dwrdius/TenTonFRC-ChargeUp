@@ -34,8 +34,6 @@ double BRDriveState;
 
 double rotVectMulti;
 double leftTrig=mathConst::rotationVectorMultiplier;
-double driveExponent;
-double rightTrig=mathConst::driveExponent;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -62,9 +60,12 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
 {
     // cmath reads radians; applies deadbands
     gyro = getRadian(gyro);
-    xLeft = deadband(xLeft);
-    yLeft = deadband(yLeft);
+    xLeft = pow(deadband(xLeft), mathConst::driveExponent);
+    yLeft = pow(deadband(yLeft), mathConst::driveExponent);
     xRight = deadband(xRight);
+    
+    // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
+    double rotationScalar = xRight;
 
     Point posVector = Point(0.0, 0.0);
     double joystickMagnitude = magnitude(xLeft, yLeft);
@@ -78,6 +79,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
         // convert angles back into Cartesian
         posVector.x = joystickMagnitude * sin(fieldRelativePosAngle);
         posVector.y = joystickMagnitude * cos(fieldRelativePosAngle);
+        rotationScalar = rotVectMulti * rotationScalar; 
     }
     else if (abs(xRight) < 0.1) // the < 0.1 is another reduncancy that is within the deadband
     {
@@ -85,16 +87,13 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
         return desiredSwerveModule(0.0, 1000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
-    // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
-    double rotationScalar = rotVectMulti * xRight / magnitude(mathConst::relativeX, mathConst::relativeY);
-
     // Apply rotation vectors to positional vectors to create the combined vector
     // negatives and "y, x" are assigned (negative reciprocal = perpendicular line)
     // actually the y values were negated again because it just worked. I don't know if I did math wrong, but it worked so there's another arbitrary negation
-    Point rawFL = Point((rotationScalar * mathConst::yCoords[0]) + posVector.x, (rotationScalar * mathConst::xCoords[0]) + posVector.y);
-    Point rawFR = Point((rotationScalar * mathConst::yCoords[1]) + posVector.x, (rotationScalar * mathConst::xCoords[1]) + posVector.y);
-    Point rawBL = Point((rotationScalar * mathConst::yCoords[2]) + posVector.x, (rotationScalar * mathConst::xCoords[2]) + posVector.y);
-    Point rawBR = Point((rotationScalar * mathConst::yCoords[3]) + posVector.x, (rotationScalar * mathConst::xCoords[3]) + posVector.y);
+    Point rawFL = Point((rotationScalar * mathConst::xCoords[0]) + posVector.x, (rotationScalar * mathConst::yCoords[0]) + posVector.y);
+    Point rawFR = Point((rotationScalar * mathConst::xCoords[1]) + posVector.x, (rotationScalar * mathConst::yCoords[1]) + posVector.y);
+    Point rawBL = Point((rotationScalar * mathConst::xCoords[2]) + posVector.x, (rotationScalar * mathConst::yCoords[2]) + posVector.y);
+    Point rawBR = Point((rotationScalar * mathConst::xCoords[3]) + posVector.x, (rotationScalar * mathConst::yCoords[3]) + posVector.y);
 
     // compares magnitudes of resulting vectors to see if any composite vector (rotation + position) exceeded "100%" output speed. 
     // Divide by largest value greater than 100% to limit all magnitudes to 100% at max whilst maintaining relative rotational speeds
@@ -116,6 +115,8 @@ class Robot : public frc::TimedRobot
     public:
         void TeleopInit() override
         {
+            processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
+
             m_FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
             m_FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
             m_BLDriveMotor.SetNeutralMode(NeutralMode::Brake);
@@ -177,10 +178,10 @@ class Robot : public frc::TimedRobot
                 desiredTurnBR = moduleDesiredStates.bra;
             }
 
-            setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla, driveExponent);
-            setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra, driveExponent);
-            setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla, driveExponent);
-            setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.brm, moduleDesiredStates.bra, driveExponent);
+            setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla);
+            setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra);
+            setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla);
+            setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.brm, moduleDesiredStates.bra);
             
         // Debug Math Outputs
             // Drive motor speeds (percentage)
@@ -192,7 +193,8 @@ class Robot : public frc::TimedRobot
             // CANCoder Absolute Readings
             logSwerveNumber("CANCoder", FLCANCoder.GetAbsolutePosition(), FRCANCoder.GetAbsolutePosition(), BLCANCoder.GetAbsolutePosition(), BRCANCoder.GetAbsolutePosition());
 
-            frc::SmartDashboard::PutNumber("Exponent", driveExponent);
+            frc::SmartDashboard::PutNumber("RightJoy", deadband(m_Controller.GetRightX()));
+            
             frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
             
             // Gyro angle (degrees)
@@ -217,18 +219,6 @@ class Robot : public frc::TimedRobot
             else
             {
                 rotVectMulti = leftTrig;
-            }
-            // This needs to be mapped to a proper button at some point; DPad?
-            if (m_Controller.GetRightTriggerAxis()>0.34)
-            {
-                driveExponent = 3*m_Controller.GetRightTriggerAxis();
-                if(m_Controller.GetAButton()){
-                    rightTrig = driveExponent;
-                }
-            }
-            else
-            {
-                driveExponent = rightTrig;
             }
 // ----------------------
         }

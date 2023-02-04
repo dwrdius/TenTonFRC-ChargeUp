@@ -11,7 +11,7 @@ namespace ControllerIDs {
 namespace mathConst {
     const double rotationVectorMultiplier = 2; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
-    const double driveExponent = 3;
+    const double driveExponent = 2;
 
     const double baseWidth = 14.5;             // inches
     const double baseLength = 23.25;
@@ -30,8 +30,8 @@ namespace mathConst {
     const double relativeY = baseLength / 2;
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
-    const double xCoords[4] = {-7.25,7.25,-7.25,7.25};
-    const double yCoords[4] = {11.625,11.625,-11.625,-11.625};
+    double xCoords[4] = {-7.25,7.25,-7.25,7.25};
+    double yCoords[4] = {11.625,11.625,-11.625,-11.625};
 }
 
 namespace CanIDs {

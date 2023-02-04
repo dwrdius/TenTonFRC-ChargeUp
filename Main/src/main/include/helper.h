@@ -105,9 +105,9 @@ double deadband(double joystickInput)
     return joystickInput;
 }
 
-double driveCalcs(double magnitude, double CANCoder, double angle, double exponent)
+double driveCalcs(double magnitude, double CANCoder, double angle)
 {
-    return pow(magnitude, exponent)*magnitudeOptimization(CANCoder, angle);
+    return mathConst::speedLimit*magnitude*magnitudeOptimization(CANCoder, angle);
 }
 
 double swerveCalcs(double CANCoder, double desiredAngle)
@@ -115,7 +115,7 @@ double swerveCalcs(double CANCoder, double desiredAngle)
     return mathConst::swerveMotorSpeed/90.0*angleOptimisation(CANCoder, desiredAngle);
 }
 
-void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, double CANCoder, double desiredTurn, double *driveState, double desiredMag, double desiredArg, double exponent)
+void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, double CANCoder, double desiredTurn, double *driveState, double desiredMag, double desiredArg)
 {
     // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
             // limit motor turn speed
@@ -124,34 +124,21 @@ void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, d
 
     // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
     // REMOVE EXPONENT REQUIREMENT AFTER DECIDING ON A CERTAIN EXPONENT
-    *driveState = slew(*driveState, driveCalcs(desiredMag, CANCoder, desiredArg, exponent));
+    *driveState = slew(*driveState, driveCalcs(desiredMag, CANCoder, desiredArg));
     m_drive.Set(ControlMode::PercentOutput, *driveState);
 }
 
-
-
-                                //    const double xInputCoords[4] = {0,0,0,0};
-                                //     const double yInputCoords[4] = {0,0,0,0};
-
-                                //     const double xCoords[4] = wheelCoordinateProcessor(0);
-                                //     const double yCoords[4] = wheelCoordinateProcessor(1);
-
-                                    
-                                // // 0 for x coords; 1 for y coords. 
-                                // // Converts to reciprocal unit vector
-                                // double wheelCoordinateProcessor (int switcher)
-                                // {
-                                //     double Coords[4];
-                                //     switch (switcher){
-                                //         case 0:
-                                //             for (int x = 0; x < 4; x++){
-                                //                 Coords[x] = mathConst::yInputCoords[x] / magnitude(mathConst::xInputCoords[x], mathConst::yInputCoords[x]);
-                                //             }
-                                //         case 1:
-                                //             for (int y = 0; y < 4; y++){
-                                //                 Coords[y] = mathConst::xInputCoords[y] / magnitude(mathConst::xInputCoords[y], mathConst::yInputCoords[y]);
-                                //             }
-                                //     }
-                                //     return *Coords;
-                                // }
+// 0 for x coords; 1 for y coords. 
+// Converts to reciprocal unit vector
+void processBaseDimensions (double *xCoords, double *yCoords)
+{
+    double intermediate;
+    double mag_int;
+    for (int i = 0; i < 4; i++){
+        mag_int = sqrt(xCoords[i]*xCoords[i] + yCoords[i]*yCoords[i]);
+        intermediate = yCoords[i] / mag_int;
+        yCoords[i] = xCoords[i] / mag_int;
+        xCoords[i] = intermediate;
+    }
+}
 #endif
