@@ -222,6 +222,10 @@ class Robot : public frc::TimedRobot
             }
 // ----------------------
         }
+        void AutonomousPeriodic()
+        {
+            
+        }
 
     private:
         // Initialize all components
