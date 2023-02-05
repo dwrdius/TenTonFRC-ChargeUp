@@ -30,8 +30,8 @@ namespace mathConst {
     const double relativeY = baseLength / 2;
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
-    double xCoords[4] = {-7.25,7.25,-7.25,7.25};
-    double yCoords[4] = {11.625,11.625,-11.625,-11.625};
+    double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
+    double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
 }
 
 namespace CanIDs {
@@ -54,9 +54,9 @@ namespace CanIDs {
     const int kBRCANCoder = 12;
 }
 namespace CANCoderOffsets {
-        constexpr double kFrontLeft{-31.289063};
-        constexpr double kFrontRight{171.914063};
-        constexpr double kBackLeft{56.162109};
-        constexpr double kBackRight{-116.982422};
+        constexpr double kFrontLeft{180+55.810547};
+        constexpr double kFrontRight{180+84.111328};
+        constexpr double kBackLeft{180+56.074219};
+        constexpr double kBackRight{180+-116.015625};
 }
 #endif

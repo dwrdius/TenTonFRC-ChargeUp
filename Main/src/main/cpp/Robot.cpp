@@ -1,6 +1,11 @@
+
 #include <cmath>
 #include <string>
 
+#include <frc/geometry/Pose2d.h>
+#include <frc/kinematics/SwerveDriveOdometry.h>
+#include <frc/geometry/Translation2d.h>
+#include <frc/kinematics/SwerveDriveKinematics.h>
 #include <frc/TimedRobot.h>
 #include <ctre/Phoenix.h>
 #include <frc/XboxController.h>
@@ -11,6 +16,35 @@
 #include "logValues.h"
 #include "constants.h"
 #include "helper.h"
+
+//
+// By Jaron Cyna
+//
+// Initialize all components
+
+// Main Controller
+frc::XboxController m_Controller{ControllerIDs::kControllerMainID};
+
+// Drive Motors
+TalonFX m_FLDriveMotor{CanIDs::kFLDriveMotor};
+TalonFX m_FRDriveMotor{CanIDs::kFRDriveMotor};
+TalonFX m_BLDriveMotor{CanIDs::kBLDriveMotor};
+TalonFX m_BRDriveMotor{CanIDs::kBRDriveMotor};
+
+// Swerve Motors
+TalonFX m_FLSwerveMotor{CanIDs::kFLSwerveMotor};
+TalonFX m_FRSwerveMotor{CanIDs::kFRSwerveMotor};
+TalonFX m_BLSwerveMotor{CanIDs::kBLSwerveMotor};
+TalonFX m_BRSwerveMotor{CanIDs::kBRSwerveMotor};
+
+// Encoders
+CANCoder FLCANCoder{CanIDs::kFLCANCoder};
+CANCoder FRCANCoder{CanIDs::kFRCANCoder};
+CANCoder BLCANCoder{CanIDs::kBLCANCoder};
+CANCoder BRCANCoder{CanIDs::kBRCANCoder};
+
+// Gyro
+AHRS m_navX{frc::SPI::kMXP};
 
 // Proportional value given to turn motors
 // Desired turn angles; it's multipurpose to remove clutter :p
@@ -60,12 +94,12 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
 {
     // cmath reads radians; applies deadbands
     gyro = getRadian(gyro);
-    xLeft = pow(deadband(xLeft), mathConst::driveExponent);
-    yLeft = pow(deadband(yLeft), mathConst::driveExponent);
+    xLeft = 2*(std::signbit(xLeft)-0.5)*pow(deadband(xLeft), mathConst::driveExponent);
+    yLeft = 2*(std::signbit(yLeft)-0.5)*pow(deadband(yLeft), mathConst::driveExponent);
     xRight = deadband(xRight);
     
     // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
-    double rotationScalar = xRight;
+    double rotationScalar = -xRight;
 
     Point posVector = Point(0.0, 0.0);
     double joystickMagnitude = magnitude(xLeft, yLeft);
@@ -222,43 +256,36 @@ class Robot : public frc::TimedRobot
             }
 // ----------------------
         }
-        void AutonomousInit()
-        {
-            processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
-            
-        }
 
-        void AutonomousPeriodic()
-        {
+                    // // 
+                    // // By Nathan Cho 
+                    // // 
+                    // frc::Translation2d m_frontLeftLocation{-7.25_in, 11.625_in};
+                    // frc::Translation2d m_frontRightLocation{7.25_in, 11.625_in};
+                    // frc::Translation2d m_backLeftLocation{-7.25_in, -11.625_in};
+                    // frc::Translation2d m_backRightLocation{7.25_in, -11.625_in};
 
-        }
+                    // frc::SwerveDriveKinematics<4> m_kinematics {
+                    //     m_frontLeftLocation, m_frontRightLocation,
+                    //     m_backLeftLocation, m_backRightLocation
+                    // };
 
-    private:
-        // Initialize all components
-        
-        // Main Controller
-        frc::XboxController m_Controller{ControllerIDs::kControllerMainID};
 
-        // Drive Motors
-        TalonFX m_FLDriveMotor{CanIDs::kFLDriveMotor};
-        TalonFX m_FRDriveMotor{CanIDs::kFRDriveMotor};
-        TalonFX m_BLDriveMotor{CanIDs::kBLDriveMotor};
-        TalonFX m_BRDriveMotor{CanIDs::kBRDriveMotor};
+                    // frc::SwerveDriveOdometry<4> m_odometry {
+                    //     m_kinematics, 
+                    //     m_navX.GetRotation2d(),
+                    //     {FLCANCoder.GetPosition(), FRCANCoder.GetPosition(), BLCANCoder.GetPosition(), BRCANCoder.GetPosition()}
+                    // };
 
-        // Swerve Motors
-        TalonFX m_FLSwerveMotor{CanIDs::kFLSwerveMotor};
-        TalonFX m_FRSwerveMotor{CanIDs::kFRSwerveMotor};
-        TalonFX m_BLSwerveMotor{CanIDs::kBLSwerveMotor};
-        TalonFX m_BRSwerveMotor{CanIDs::kBRSwerveMotor};
+                    // void AutonomousInit() {
+                        
+                    // }
 
-        // Encoders
-        CANCoder FLCANCoder{CanIDs::kFLCANCoder};
-        CANCoder FRCANCoder{CanIDs::kFRCANCoder};
-        CANCoder BLCANCoder{CanIDs::kBLCANCoder};
-        CANCoder BRCANCoder{CanIDs::kBRCANCoder};
+                    // void AutonomousPeriodic() {
 
-        // Gyro
-        AHRS m_navX{frc::SPI::kMXP};
+                    // }
+
+
 };
 
 #ifndef RUNNING_FRC_TESTS
