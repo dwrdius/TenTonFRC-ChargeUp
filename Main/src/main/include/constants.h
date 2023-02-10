@@ -1,6 +1,9 @@
-#ifndef MATHSTUFF_H
-#define MATHSTUFF_H
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 #include <cmath>
+
+#include <frc/geometry/Translation2d.h>
+#include <frc/geometry/Rotation2d.h>
 
 namespace ControllerIDs {
     //USB port addresses on drivestation PC.
@@ -30,8 +33,8 @@ namespace mathConst {
     const double relativeY = baseLength / 2;
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
-    double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
-    double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
+    static double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
+    static double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
 }
 
 namespace CanIDs {
@@ -54,9 +57,18 @@ namespace CanIDs {
     const int kBRCANCoder = 12;
 }
 namespace CANCoderOffsets {
-        constexpr double kFrontLeft{180+55.810547};
-        constexpr double kFrontRight{180+84.111328};
-        constexpr double kBackLeft{180+56.074219};
-        constexpr double kBackRight{180+-116.015625};
+        constexpr double kFrontLeft{-124.189453};
+        constexpr double kFrontRight{-95.888672};
+        constexpr double kBackLeft{-123.925781};
+        constexpr double kBackRight{63.984375};
 }
+
+namespace kinematicsValues
+{
+    const frc::Translation2d kFrontLeftLocationFromCenter{12.5_in, 7.75_in};
+    const frc::Translation2d kFrontRightLocationFromCenter{12.5_in, -7.75_in};
+    const frc::Translation2d kBackLeftLocationFromCenter{-12.5_in, 7.75_in};
+    const frc::Translation2d kBackRightLocationFromCenter{-12.5_in, -7.75_in};    
+}
+
 #endif
