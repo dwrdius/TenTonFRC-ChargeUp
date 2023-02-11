@@ -1,6 +1,9 @@
 #ifndef MATHSTUFF_H
 #define MATHSTUFF_H
+
 #include <cmath>
+
+#include <frc/geometry/Translation2d.h>
 
 namespace ControllerIDs {
     //USB port addresses on drivestation PC.
@@ -72,5 +75,12 @@ namespace CANCoderOffsets {
         constexpr double kFrontRight{84.111328};
         constexpr double kBackLeft{56.074219};
         constexpr double kBackRight{-116.015625};
+}
+
+namespace Odometry {
+    const frc::Translation2d kFLLocation{12.5_in, 7.75_in};
+    const frc::Translation2d kFRLocation{12.5_in, -7.75_in};
+    const frc::Translation2d kBLLocation{-12.5_in, 7.75_in};
+    const frc::Translation2d kBRLocation{-12.5_in, -7.75_in};
 }
 #endif
