@@ -1,4 +1,6 @@
 
+#include <frc/drive/DifferentialDrive.h>
+
 #include <cmath>
 #include <string>
 
@@ -16,6 +18,10 @@
 #include "logValues.h"
 #include "constants.h"
 #include "helper.h"
+
+#include <iostream>
+#include "networktables/NetworkTable.h"
+#include "networktables/NetworkTableInstance.h"
 
 //
 // By Jaron Cyna
@@ -46,6 +52,8 @@ CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 // Gyro
 AHRS m_navX{frc::SPI::kMXP};
 
+double diff=1;
+double slewinter;
 // Proportional value given to turn motors
 // Desired turn angles; it's multipurpose to remove clutter :p
 double desiredTurnFL;
@@ -94,15 +102,12 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
 {
     // cmath reads radians; applies deadbands
     gyro = getRadian(gyro);
-    xLeft = 2*(std::signbit(xLeft)-0.5)*pow(deadband(xLeft), mathConst::driveExponent);
-    yLeft = 2*(std::signbit(yLeft)-0.5)*pow(deadband(yLeft), mathConst::driveExponent);
-    xRight = deadband(xRight);
     
     // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
-    double rotationScalar = -xRight;
+    double rotationScalar = xRight;
 
     Point posVector = Point(0.0, 0.0);
-    double joystickMagnitude = magnitude(xLeft, yLeft);
+    double joystickMagnitude = pow(magnitude(xLeft, yLeft), mathConst::driveExponent);
     if (joystickMagnitude)  // Check if left joystick has an input
     {
         // atan2 converts joystick input into angle
@@ -143,6 +148,8 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
 
     return desiredSwerveModule(physFL.x, getDegree(physFL.y), physFR.x, getDegree(physFR.y), physBL.x, getDegree(physBL.y), physBR.x, getDegree(physBR.y));
 }
+
+desiredSwerveModule moduleDesiredStates = swerveKinematics(0, 0, 0, 0);
 
 class Robot : public frc::TimedRobot
 {
@@ -185,21 +192,45 @@ class Robot : public frc::TimedRobot
             FRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontRight);
             BLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackLeft);
             BRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackRight);
-
-            desiredTurnFL=FLCANCoder.GetAbsolutePosition();
-            desiredTurnFR=FRCANCoder.GetAbsolutePosition();
-            desiredTurnBL=BLCANCoder.GetAbsolutePosition();
-            desiredTurnBR=BRCANCoder.GetAbsolutePosition();
-
         }
         void TeleopPeriodic() override
         {
+            // distance calcs
+            auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+            double tx = table -> GetNumber("tx", 0.0);
+            double ty = table -> GetNumber("ty", 0.0);
+            double angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
+            double distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
+
             // moduleDesiredStates contains all calculated desired values.
             // .flm is "Front left magnitude" (percentage)
             // .fla is "Front left angle" (degrees)
             // fl[], fr[], bl[], br[]
-            desiredSwerveModule moduleDesiredStates = swerveKinematics(m_Controller.GetLeftX(), m_Controller.GetLeftY(), m_Controller.GetRightX(), m_navX.GetAngle());
-            
+            table -> PutNumber("pipeline", 1);
+            if (m_Controller.GetXButton()) {
+                
+                moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX(), 0), deadband(m_Controller.GetLeftY(), 0), tx/28, m_navX.GetAngle());
+                frc::SmartDashboard::PutNumber("TX", tx);
+            }
+            else if (m_Controller.GetYButton())
+            {
+                diff = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
+                if (abs(diff)>20){
+                    diff = -(std::signbit(tx)-0.5)*2;
+                }
+                else {
+                    diff = diff/20;
+                }
+                slewinter = demonicslew(slewinter, diff);
+                // diff = diff-mathConst::deadband*2*(std::signbit(diff)-0.5);
+                // diff = fmax(1.0,diff);
+                frc::SmartDashboard::PutNumber("diff", slewinter);
+                moduleDesiredStates = swerveKinematics(0, slewinter, tx/28, 180);
+            }
+            else {
+                moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX(), 0), deadband(m_Controller.GetLeftY(), 0), deadband(m_Controller.GetRightX(), 0), m_navX.GetAngle());
+            }
+            frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
             // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
             // this only updates the "desired angle" read by the turn motors if the exit code is not detected
             // 600 is an arbitrary value that is over a full rotation less than 1000 for reduncancy; anything 90<x<1000 works
@@ -220,14 +251,12 @@ class Robot : public frc::TimedRobot
         // Debug Math Outputs
             // Drive motor speeds (percentage)
             logSwerveNumber("Magnitude", FLDriveState, FRDriveState, BLDriveState, BRDriveState);
-            
+            logSwerveNumber("drive", moduleDesiredStates.flm,moduleDesiredStates.frm,moduleDesiredStates.blm,moduleDesiredStates.brm);
             // Desired turn angles (degrees)
             logSwerveNumber("Desired Angle", desiredTurnFL, desiredTurnFR, desiredTurnBL, desiredTurnBR);
 
             // CANCoder Absolute Readings
             logSwerveNumber("CANCoder", FLCANCoder.GetAbsolutePosition(), FRCANCoder.GetAbsolutePosition(), BLCANCoder.GetAbsolutePosition(), BRCANCoder.GetAbsolutePosition());
-
-            frc::SmartDashboard::PutNumber("RightJoy", deadband(m_Controller.GetRightX()));
             
             frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
             
@@ -254,6 +283,8 @@ class Robot : public frc::TimedRobot
             {
                 rotVectMulti = leftTrig;
             }
+    
+
 // ----------------------
         }
 
@@ -284,6 +315,7 @@ class Robot : public frc::TimedRobot
                     // void AutonomousPeriodic() {
 
                     // }
+
 
 
 };

@@ -1,7 +1,12 @@
+
+
 #ifndef HELPERS_H
 #include <cmath>
 #include "constants.h"
 #include <ctre/Phoenix.h>
+
+
+
 
 // magnitude of vector to convert from Cartesian to Polar
 double magnitude(double x, double y) 
@@ -92,17 +97,28 @@ double swerveDeadband(double swerveTurn)
 // Deadband for joystick
 // prevents drift at values close to 0
 // Else converts range from deadband-1 to 0-1
-double deadband(double joystickInput)
+// 0: Joystick, 1: LL Distance
+double deadband(double input, int mode)
 {
-    if (abs(joystickInput) <= mathConst::deadband)
-    {
-        return 0.0;
+    switch (mode){
+        case 0:
+            if (abs(input) <= mathConst::deadband)
+            {
+                input=0;
+            }
+            else
+            {
+                input = mathConst::deadbandOffset*(input+mathConst::deadband*2*(std::signbit(input)-0.5));
+            }
+            break;
+        case 1:
+            if (abs(input) <= Limelight::LLDistanceDead)
+            {
+                input=0;
+            }
+            break;
     }
-    else
-    {
-        joystickInput = mathConst::deadbandOffset*(joystickInput+mathConst::deadband*2*(std::signbit(joystickInput)-0.5));
-    }
-    return joystickInput;
+    return input;
 }
 
 double driveCalcs(double magnitude, double CANCoder, double angle)
@@ -140,5 +156,16 @@ void processBaseDimensions (double *xCoords, double *yCoords)
         yCoords[i] = xCoords[i] / mag_int;
         xCoords[i] = intermediate;
     }
+}
+
+double demonicslew(double currentPercentage, double desiredPercentage)
+{
+    double diff = desiredPercentage-currentPercentage;
+    double slewRate = 0.02;
+    if (abs(diff)>=slewRate)
+    {
+        desiredPercentage = currentPercentage - slewRate*2*(std::signbit(diff)-0.5);
+    }
+    return desiredPercentage;
 }
 #endif

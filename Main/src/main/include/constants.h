@@ -9,7 +9,7 @@ namespace ControllerIDs {
 }
 
 namespace mathConst {
-    const double rotationVectorMultiplier = 2; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
+    const double rotationVectorMultiplier = 1.2; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
     const double driveExponent = 2;
 
@@ -34,6 +34,20 @@ namespace mathConst {
     double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
 }
 
+namespace Limelight {
+    // how many degrees back is your limelight rotated from perfectly vertical?
+    const double limelightMountAngleDegrees = -28.28;
+
+    // distance from the center of the Limelight lens to the floor
+    const double limelightLensHeightInches = 41.75;
+
+    // distance from the target to the floor
+    const double goalHeightInches = 23.5;
+
+    const double LLDistanceDead = 5; //inches (please don't choose 1)
+    const double LLAngleDead = 2; //degrees (0-28)
+}
+
 namespace CanIDs {
     //CAN IDs
     const int kFLDriveMotor = 3;
@@ -54,9 +68,9 @@ namespace CanIDs {
     const int kBRCANCoder = 12;
 }
 namespace CANCoderOffsets {
-        constexpr double kFrontLeft{180+55.810547};
-        constexpr double kFrontRight{180+84.111328};
-        constexpr double kBackLeft{180+56.074219};
-        constexpr double kBackRight{180+-116.015625};
+        constexpr double kFrontLeft{55.810547};
+        constexpr double kFrontRight{84.111328};
+        constexpr double kBackLeft{56.074219};
+        constexpr double kBackRight{-116.015625};
 }
 #endif
