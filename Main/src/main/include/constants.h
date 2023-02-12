@@ -83,4 +83,5 @@ namespace Odometry {
     const frc::Translation2d kBLLocation{-12.5_in, 7.75_in};
     const frc::Translation2d kBRLocation{-12.5_in, -7.75_in};
 }
+
 #endif

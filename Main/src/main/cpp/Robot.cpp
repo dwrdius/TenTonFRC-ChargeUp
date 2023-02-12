@@ -1,21 +1,21 @@
 #include "Robot.h"
 
-// Initialize all components
+// Initialize devices.
 
 // Main Controller
-frc::XboxController m_Controller{ControllerIDs::kControllerMainID};
+frc::XboxController controller{ControllerIDs::kControllerMainID};
 
 // Drive Motors
-TalonFX m_FLDriveMotor{CanIDs::kFLDriveMotor};
-TalonFX m_FRDriveMotor{CanIDs::kFRDriveMotor};
-TalonFX m_BLDriveMotor{CanIDs::kBLDriveMotor};
-TalonFX m_BRDriveMotor{CanIDs::kBRDriveMotor};
+TalonFX FLDriveMotor{CanIDs::kFLDriveMotor};
+TalonFX FRDriveMotor{CanIDs::kFRDriveMotor};
+TalonFX BLDriveMotor{CanIDs::kBLDriveMotor};
+TalonFX BRDriveMotor{CanIDs::kBRDriveMotor};
 
 // Swerve Motors
-TalonFX m_FLSwerveMotor{CanIDs::kFLSwerveMotor};
-TalonFX m_FRSwerveMotor{CanIDs::kFRSwerveMotor};
-TalonFX m_BLSwerveMotor{CanIDs::kBLSwerveMotor};
-TalonFX m_BRSwerveMotor{CanIDs::kBRSwerveMotor};
+TalonFX FLSwerveMotor{CanIDs::kFLSwerveMotor};
+TalonFX FRSwerveMotor{CanIDs::kFRSwerveMotor};
+TalonFX BLSwerveMotor{CanIDs::kBLSwerveMotor};
+TalonFX BRSwerveMotor{CanIDs::kBRSwerveMotor};
 
 // Encoders
 CANCoder FLCANCoder{CanIDs::kFLCANCoder};
@@ -31,6 +31,9 @@ AHRS navX{frc::SPI::kMXP};
 auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
 double tx;
 double ty;
+
+bool pipeline = 1;
+
 double angleToGoalDegrees;
 double distanceFromLimelightToGoalInches;
 
@@ -54,10 +57,6 @@ double FLDriveState;
 double FRDriveState;
 double BLDriveState;
 double BRDriveState;
-
-
-double rotVectMulti;
-double leftTrig=mathConst::rotationVectorMultiplier;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -100,7 +99,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
         // convert angles back into Cartesian
         posVector.x = joystickMagnitude * sin(fieldRelativePosAngle);
         posVector.y = joystickMagnitude * cos(fieldRelativePosAngle);
-        rotationScalar = rotVectMulti * rotationScalar; 
+        rotationScalar = mathConst::rotationVectorMultiplier * rotationScalar; 
     }
     else if (abs(xRight) < 0.1) // the < 0.1 is another reduncancy that is within the deadband
     {
@@ -150,10 +149,10 @@ frc::SwerveDriveOdometry<4> odometry{
   kinematics,
   navX.GetRotation2d(),
   {
-    frc::SwerveModulePosition{TalonFXToInches(m_FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+    frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+    frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+    frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+    frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
   },
   frc::Pose2d{0_m, 0_m, 0_deg}
 };
@@ -162,15 +161,15 @@ void Robot::RobotInit()
 {
     processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
 
-    m_FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_BLDriveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_BRDriveMotor.SetNeutralMode(NeutralMode::Brake);
+    FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
+    FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
+    BLDriveMotor.SetNeutralMode(NeutralMode::Brake);
+    BRDriveMotor.SetNeutralMode(NeutralMode::Brake);
 
-    m_FLSwerveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_FRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_BLSwerveMotor.SetNeutralMode(NeutralMode::Brake);
-    m_BRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
+    FLSwerveMotor.SetNeutralMode(NeutralMode::Brake);
+    FRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
+    BLSwerveMotor.SetNeutralMode(NeutralMode::Brake);
+    BRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
 
     navX.ZeroYaw();
 
@@ -179,22 +178,48 @@ void Robot::RobotInit()
     BLCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
     BRCANCoder.ConfigAbsoluteSensorRange(Signed_PlusMinus180);
 
-    m_FLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-    m_FRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-    m_BLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
-    m_BRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
+    FLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
+    FRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
+    BLDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
+    BRDriveMotor.ConfigPeakOutputForward(mathConst::speedLimit);
 
-    m_FLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-    m_FRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-    m_BLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
-    m_BRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
+    FLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
+    FRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
+    BLDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
+    BRDriveMotor.ConfigPeakOutputReverse(-mathConst::speedLimit);
     
     FLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontLeft);
     FRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontRight);
     BLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackLeft);
     BRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackRight);
 }
-void Robot::RobotPeriodic() {}
+void Robot::RobotPeriodic() 
+{
+    // Get the rotation of the robot from the gyro.
+    frc::Rotation2d rotation = navX.GetRotation2d();
+
+    // Update the pose.
+    auto pose = odometry.Update(
+        rotation,
+        {
+        frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+        });
+
+    // Display pose and rotation on SmartDashboard.
+    frc::SmartDashboard::PutNumber("X ", pose.X().value());
+    frc::SmartDashboard::PutNumber("Y ", pose.Y().value());
+    frc::SmartDashboard::PutNumber("theta ", rotation.Degrees().value());
+
+    table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    tx = table -> GetNumber("tx", 0.0);
+    ty = table -> GetNumber("ty", 0.0);
+    table -> PutNumber("pipeline", pipeline+1);
+    angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
+    distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
+}
 
 void Robot::AutonomousInit() {}
 void Robot::AutonomousPeriodic() {}
@@ -202,42 +227,27 @@ void Robot::AutonomousPeriodic() {}
 void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic()
 {
-    // Get the rotation of the robot from the gyro.
-  frc::Rotation2d rotation = navX.GetRotation2d();
-
-  // Update the pose.
-  auto pose = odometry.Update(rotation,
-  {
-    frc::SwerveModulePosition{TalonFXToInches(m_FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
-    frc::SwerveModulePosition{TalonFXToInches(m_BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
-  });
-
-  // Display pose and rotation on SmartDashboard.
-  frc::SmartDashboard::PutNumber("X ", pose.X().value());
-  frc::SmartDashboard::PutNumber("Y ", pose.Y().value());
-  frc::SmartDashboard::PutNumber("theta ", rotation.Degrees().value());
-
-    // distance calcs
-    auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-    double tx = table -> GetNumber("tx", 0.0);
-    double ty = table -> GetNumber("ty", 0.0);
-    double angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
-    double distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
-
     // moduleDesiredStates contains all calculated desired values.
     // .flm is "Front left magnitude" (percentage)
     // .fla is "Front left angle" (degrees)
     // fl[], fr[], bl[], br[]
-    table -> PutNumber("pipeline", 1);
-    if (m_Controller.GetXButton()) {
-        
-        moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX(), 0), deadband(m_Controller.GetLeftY(), 0), tx/28, navX.GetAngle());
-        frc::SmartDashboard::PutNumber("TX", tx);
+
+    if (controller.GetAButton()) {
+        pipeline = 1;
+        LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
+        if (abs(LimelightDifference)>20){
+            LimelightDifference = -(std::signbit(tx)-0.5)*2;
+        }
+        else {
+            LimelightDifference = LimelightDifference/20;
+        }
+        LimelightSlew = demonicslew(LimelightSlew, LimelightDifference);
+        frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
+        moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
     }
-    else if (m_Controller.GetYButton())
+    else if (controller.GetBButton())
     {
+        pipeline = 2;
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
         if (abs(LimelightDifference)>20){
             LimelightDifference = -(std::signbit(tx)-0.5)*2;
@@ -250,7 +260,7 @@ void Robot::TeleopPeriodic()
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
     }
     else {
-        moduleDesiredStates = swerveKinematics(deadband(m_Controller.GetLeftX(), 0), deadband(m_Controller.GetLeftY(), 0), deadband(m_Controller.GetRightX(), 0), navX.GetAngle());
+        moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());
     }
     frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
     // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
@@ -265,10 +275,10 @@ void Robot::TeleopPeriodic()
         desiredTurnBR = moduleDesiredStates.bra;
     }
 
-    setDesiredState(m_FLSwerveMotor, m_FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla);
-    setDesiredState(m_FRSwerveMotor, m_FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra);
-    setDesiredState(m_BLSwerveMotor, m_BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla);
-    setDesiredState(m_BRSwerveMotor, m_BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.brm, moduleDesiredStates.bra);
+    setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla);
+    setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra);
+    setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla);
+    setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, moduleDesiredStates.brm, moduleDesiredStates.bra);
     
 // Debug Math Outputs
     // Drive motor speeds (percentage)
@@ -279,31 +289,16 @@ void Robot::TeleopPeriodic()
 
     // CANCoder Absolute Readings
     logSwerveNumber("CANCoder", FLCANCoder.GetAbsolutePosition(), FRCANCoder.GetAbsolutePosition(), BLCANCoder.GetAbsolutePosition(), BRCANCoder.GetAbsolutePosition());
-    
-    frc::SmartDashboard::PutNumber("Rotation Scalar", rotVectMulti);
-    
+
     // Gyro angle (degrees)
     frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
 
 // --------- this section is for testing; kenta chooses which features stay and the trigger things are only for configuring preference
     // Zero gyro (press d-pad in whatever direction the PDP is relative to the North you want)
-    if (m_Controller.GetPOV()!=-1)
+    if (controller.GetPOV()!=-1)
     {
         navX.ZeroYaw();
-        navX.SetAngleAdjustment(m_Controller.GetPOV());
-    }
-    
-    // this is getting deleted no matter what; stays until a rotation:translation ratio is determined
-    if (m_Controller.GetLeftTriggerAxis())
-    {
-        rotVectMulti = 3*m_Controller.GetLeftTriggerAxis();
-        if(m_Controller.GetAButton()){
-            leftTrig = rotVectMulti;
-        }
-    }
-    else
-    {
-        rotVectMulti = leftTrig;
+        navX.SetAngleAdjustment(controller.GetPOV());
     }
 }
 
