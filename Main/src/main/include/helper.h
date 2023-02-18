@@ -1,12 +1,7 @@
-
-
 #ifndef HELPERS_H
 #include <cmath>
 #include "constants.h"
 #include <ctre/Phoenix.h>
-
-
-
 
 // magnitude of vector to convert from Cartesian to Polar
 double magnitude(double x, double y) 
@@ -85,19 +80,10 @@ double slew(double currentPercentage, double desiredPercentage)
     return desiredPercentage;
 }
 
-double swerveDeadband(double swerveTurn)
-{
-    if (abs(swerveTurn) <= mathConst::swerveDeadband)
-    {
-        return 0.0;
-    }
-    return swerveTurn;
-}
-
 // Deadband for joystick
 // prevents drift at values close to 0
 // Else converts range from deadband-1 to 0-1
-// 0: Joystick, 1: LL Distance
+// 0: Joystick, 1: LL Distance, 2: swerve angle
 double deadband(double input, int mode)
 {
     switch (mode){
@@ -113,6 +99,12 @@ double deadband(double input, int mode)
             break;
         case 1:
             if (abs(input) <= Limelight::LLDistanceDead)
+            {
+                input=0;
+            }
+            break;
+        case 2:
+            if (abs(input) <= mathConst::swerveDeadband)
             {
                 input=0;
             }
@@ -135,7 +127,7 @@ void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, d
 {
     // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
             // limit motor turn speed
-    *swerveState = swerveDeadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn)));
+    *swerveState = deadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn)), 2);
     m_swerve.Set(TalonFXControlMode::PercentOutput, *swerveState);
 
     // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
@@ -169,5 +161,31 @@ double demonicslew(double currentPercentage, double desiredPercentage)
     return desiredPercentage;
 }
 
+// This is for the autonomous to balance on the charging station
+double getAutoBalanceVelocity(double currentRoll){
+    const double rollToVelocityConst = -0.01; // random constant (needs adjusting)
+    double balanceVelocity; // declare velocity variable
+    
+    //make a deadzone so the robot isn't always adjusting
+    if (abs(currentRoll)<= 3){
+        balanceVelocity = 0;
+    }
+    else{
+      balanceVelocity = currentRoll * rollToVelocityConst; //multiply the navX roll by a constant to get a velocity value
+    }
+    return balanceVelocity;
+}
+
+// btw everything breaks with an asymmetrical base
+double autoRotationScalarFromCoords(double posX, double posY, double desiredX, double desiredY, double angle, double desiredAngle)
+{
+    // circumference of circle (inches) = 91.08
+    // degrees moved = x in/s
+    // x degree / s = 0.253
+    // x in / s = mathConst::driveVelocity
+    // change in angle / displacement = y degrees/inch
+    // y / (0.253/driveVelocity) = how much more we want to turn degrees than inches in the same about of time
+    return ((desiredAngle-angle) / magnitude(desiredX-posX, desiredY-posY)) / mathConst::kDegreesPerInchDenominator;
+}
 
 #endif

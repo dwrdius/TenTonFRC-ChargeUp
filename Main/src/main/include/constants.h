@@ -16,8 +16,8 @@ namespace mathConst {
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
     const double driveExponent = 2;
 
-    const double baseWidth = 14.5;             // inches
-    const double baseLength = 23.25;
+    // const double baseWidth = 14.5;             // inches
+    // const double baseLength = 23.25;
 
     // speed of swivel
     const double swerveMotorSpeed = 0.5;
@@ -28,13 +28,12 @@ namespace mathConst {
     const double deadband = 0.2; // DO NOT DECREASE (controller drift was insane)
     const double deadbandOffset = 1/(1-deadband);
 
-    // For determining motor positions on an x,y grid
-    const double relativeX = baseWidth / 2;
-    const double relativeY = baseLength / 2;
-
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
     double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
     double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
+
+    const double driveVelocity = 1;
+    const double kDegreesPerInchDenominator = (M_PI*2*sqrt(pow(mathConst::xCoords[0], 2) + pow(mathConst::yCoords[0], 2))) / mathConst::driveVelocity / 360.0;
 }
 
 namespace Limelight {
