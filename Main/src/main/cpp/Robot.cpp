@@ -58,6 +58,12 @@ double FRDriveState;
 double BLDriveState;
 double BRDriveState;
 
+// debugging rotational rpm
+double initAngle;
+double degreesofRotation;
+
+bool goBalanceDog = true;
+
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
 // percentage magnitude
@@ -221,8 +227,41 @@ void Robot::RobotPeriodic()
     distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 }
 
-void Robot::AutonomousInit() {}
-void Robot::AutonomousPeriodic() {}
+void Robot::AutonomousInit() 
+{
+}
+void Robot::AutonomousPeriodic() 
+{
+    
+    if(goBalanceDog){
+        double balanceVelocity = getAutoBalanceVelocity(navX.GetRoll());
+        frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
+        frc::SmartDashboard::PutNumber("Roll", navX.GetRoll());
+        frc::SmartDashboard::PutNumber("Pitch", navX.GetPitch());
+        frc::SmartDashboard::PutNumber("balanceVelocity ", balanceVelocity); //debug
+        FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FLCANCoder.GetAbsolutePosition(), 0), 2));
+        FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FRCANCoder.GetAbsolutePosition(), 0), 2));
+        BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BLCANCoder.GetAbsolutePosition(), 0), 2));
+        BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BRCANCoder.GetAbsolutePosition(), 0), 2));
+        FLDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
+        FRDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
+        BLDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
+        BRDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
+    }
+    else if(fabs(navX.GetRoll())>(11)){
+        goBalanceDog = true;
+    }
+    else {
+        FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FLCANCoder.GetAbsolutePosition(), 0), 2));
+        FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FRCANCoder.GetAbsolutePosition(), 0), 2));
+        BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BLCANCoder.GetAbsolutePosition(), 0), 2));
+        BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BRCANCoder.GetAbsolutePosition(), 0), 2));
+        FLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
+        FRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
+        BLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
+        BRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
+    }
+}
 
 void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic()
@@ -292,6 +331,9 @@ void Robot::TeleopPeriodic()
 
     // Gyro angle (degrees)
     frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
+    frc::SmartDashboard::PutNumber("Roll", navX.GetRoll());
+    frc::SmartDashboard::PutNumber("Pitch", navX.GetPitch());
+    frc::SmartDashboard::PutNumber("Rate", navX.GetRate());
 
 // --------- this section is for testing; kenta chooses which features stay and the trigger things are only for configuring preference
     // Zero gyro (press d-pad in whatever direction the PDP is relative to the North you want)
@@ -300,6 +342,7 @@ void Robot::TeleopPeriodic()
         navX.ZeroYaw();
         navX.SetAngleAdjustment(controller.GetPOV());
     }
+
 }
 
 void Robot::TestInit() {} 
