@@ -23,6 +23,7 @@
 #include "logValues.h"
 #include "constants.h"
 #include "helper.h"
+#include "autonomous.h"
 
 #include "networktables/NetworkTable.h"
 #include "networktables/NetworkTableInstance.h"

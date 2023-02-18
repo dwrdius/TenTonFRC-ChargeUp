@@ -165,7 +165,7 @@ double demonicslew(double currentPercentage, double desiredPercentage)
 double getAutoBalanceVelocity(double currentRoll){
     const double rollToVelocityConst = -0.01; // random constant (needs adjusting)
     double balanceVelocity; // declare velocity variable
-    
+     
     //make a deadzone so the robot isn't always adjusting
     if (abs(currentRoll)<= 3){
         balanceVelocity = 0;
@@ -177,7 +177,7 @@ double getAutoBalanceVelocity(double currentRoll){
 }
 
 // btw everything breaks with an asymmetrical base
-double autoRotationScalarFromCoords(double posX, double posY, double desiredX, double desiredY, double angle, double desiredAngle)
+void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
 {
     // circumference of circle (inches) = 91.08
     // degrees moved = x in/s
@@ -185,7 +185,9 @@ double autoRotationScalarFromCoords(double posX, double posY, double desiredX, d
     // x in / s = mathConst::driveVelocity
     // change in angle / displacement = y degrees/inch
     // y / (0.253/driveVelocity) = how much more we want to turn degrees than inches in the same about of time
-    return ((desiredAngle-angle) / magnitude(desiredX-posX, desiredY-posY)) / mathConst::kDegreesPerInchDenominator;
+    mathConst::rotationVectorMultiplier = ((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator;
 }
+
+
 
 #endif

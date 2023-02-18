@@ -62,6 +62,15 @@ double BRDriveState;
 double initAngle;
 double degreesofRotation;
 
+// auto
+double diffX;
+double diffY;
+double diffAngle;
+double linearDisplacement;
+double translationAngle;
+int autoIndex = 0;
+
+// TODO: who named this?
 bool goBalanceDog = true;
 
 // all doubles
@@ -80,6 +89,8 @@ struct Point
     double x, y;
     Point(double x, double y) : x(x), y(y) {}
 };
+
+frc::Pose2d currentPose{0_m, 0_m, 0_rad};
 
 // Input degrees
 // Automatically applies deadbands
@@ -137,6 +148,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
 }
 
 desiredSwerveModule moduleDesiredStates = swerveKinematics(0, 0, 0, 0);
+desiredSwerveModule autoDesiredStates = swerveKinematics(0, 0, 0, 0);
 
 frc::SwerveDriveKinematics<4> kinematics{
   Odometry::kFLLocation, 
@@ -160,8 +172,49 @@ frc::SwerveDriveOdometry<4> odometry{
     frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
     frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
   },
-  frc::Pose2d{0_m, 0_m, 0_deg}
+  frc::Pose2d{0_in, 0_in, 0_deg}
 };
+
+void moveToCoord(double autoCommandList[][3])
+{ 
+    diffX = autoCommandList[autoIndex][0] - currentPose.X().value();
+    diffY = autoCommandList[autoIndex][1] - currentPose.Y().value();
+    diffAngle = fmod(autoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
+    translationAngle = atan2(diffX, diffY);
+
+    if (diffAngle > 180.0)
+    {
+        diffAngle = diffAngle - 360.0;
+    }
+    else if (diffAngle < -180.0)
+    {
+        diffAngle = diffAngle + 360.0;
+    }
+
+    linearDisplacement = magnitude(diffX, diffY);
+    autoRotationScalarFromCoords(diffAngle, linearDisplacement);
+
+    linearDisplacement = deadband(linearDisplacement / 48, 1); // 48 inches is the Kp for now
+    if (!linearDisplacement)
+    {
+        autoIndex++;
+    }
+    autoDesiredStates = swerveKinematics(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw());
+
+    if (autoDesiredStates.fla < 600.0)
+    {
+        // Update wheel angles for the turn motors to read
+        desiredTurnFL = autoDesiredStates.fla;
+        desiredTurnFR = autoDesiredStates.fra;
+        desiredTurnBL = autoDesiredStates.bla;
+        desiredTurnBR = autoDesiredStates.bra;
+    }
+
+    setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+    setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+    setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+    setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
+}
 
 void Robot::RobotInit() 
 {
@@ -198,27 +251,23 @@ void Robot::RobotInit()
     FRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kFrontRight);
     BLCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackLeft);
     BRCANCoder.ConfigMagnetOffset(CANCoderOffsets::kBackRight);
-}
-void Robot::RobotPeriodic() 
-{
+
     // Get the rotation of the robot from the gyro.
     frc::Rotation2d rotation = navX.GetRotation2d();
 
-    // Update the pose.
-    auto pose = odometry.Update(
+    // Reset the pose.
+    odometry.ResetPosition(
         rotation,
         {
         frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
         frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
         frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
         frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
-        });
-
-    // Display pose and rotation on SmartDashboard.
-    frc::SmartDashboard::PutNumber("X ", pose.X().value());
-    frc::SmartDashboard::PutNumber("Y ", pose.Y().value());
-    frc::SmartDashboard::PutNumber("theta ", rotation.Degrees().value());
-
+        },
+        frc::Pose2d{0_m, 0_m, 0_deg});
+}
+void Robot::RobotPeriodic() 
+{
     table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     tx = table -> GetNumber("tx", 0.0);
     ty = table -> GetNumber("ty", 0.0);
@@ -229,10 +278,42 @@ void Robot::RobotPeriodic()
 
 void Robot::AutonomousInit() 
 {
+    // Get the rotation of the robot from the gyro.
+    frc::Rotation2d rotation = navX.GetRotation2d();
+
+    // Reset the pose.
+    odometry.ResetPosition(
+        rotation,
+        {
+        frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+        },
+        frc::Pose2d{0_m, 0_m, 0_deg});
 }
+
 void Robot::AutonomousPeriodic() 
 {
-    
+    // Get the rotation of the robot from the gyro.
+    frc::Rotation2d rotation = navX.GetRotation2d();
+
+    // Update the currentPose.
+    currentPose = odometry.Update(
+        rotation,
+        {
+        frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+        });
+
+    // Display currentPose and rotation on SmartDashboard.
+    frc::SmartDashboard::PutNumber("X ", currentPose.X().value());
+    frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value());
+
+
+
     if(goBalanceDog){
         double balanceVelocity = getAutoBalanceVelocity(navX.GetRoll());
         frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
@@ -252,14 +333,7 @@ void Robot::AutonomousPeriodic()
         goBalanceDog = true;
     }
     else {
-        FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FLCANCoder.GetAbsolutePosition(), 0), 2));
-        FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FRCANCoder.GetAbsolutePosition(), 0), 2));
-        BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BLCANCoder.GetAbsolutePosition(), 0), 2));
-        BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BRCANCoder.GetAbsolutePosition(), 0), 2));
-        FLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
-        FRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
-        BLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
-        BRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0.10);
+        moveToCoord(*autonomous::auto_ptr);
     }
 }
 

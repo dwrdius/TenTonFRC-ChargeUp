@@ -12,7 +12,6 @@ namespace ControllerIDs {
 }
 
 namespace mathConst {
-    const double rotationVectorMultiplier = 1.2; // controls how much of the vector addition is dedicated to rotation vs field movement  0 < x < double limit idk
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
     const double driveExponent = 2;
 
@@ -31,7 +30,10 @@ namespace mathConst {
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
     double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
     double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
-
+    
+    // controls how much of the vector addition is dedicated to rotation vs field movement
+    double rotationVectorMultiplier = 1.2; 
+    
     const double driveVelocity = 1;
     const double kDegreesPerInchDenominator = (M_PI*2*sqrt(pow(mathConst::xCoords[0], 2) + pow(mathConst::yCoords[0], 2))) / mathConst::driveVelocity / 360.0;
 }
