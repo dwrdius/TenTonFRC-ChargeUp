@@ -26,6 +26,9 @@ CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 // Gyro
 AHRS navX{frc::SPI::kMXP};
 
+// LED
+frc::PWMSparkMax LED{PWMIDs::kLED};
+
 // wall of not constant variable shame 
 // Limelight shenanigans
 auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
@@ -39,6 +42,7 @@ double distanceFromLimelightToGoalInches;
 
 double LimelightDifference=1;
 double LimelightSlew;
+
 // Proportional value given to turn motors
 // Desired turn angles; it's multipurpose to remove clutter :p
 double desiredTurnFL;
@@ -70,8 +74,8 @@ double linearDisplacement;
 double translationAngle;
 int autoIndex = 0;
 
-// TODO: who named this?
 bool goBalanceDog = true;
+bool LEDStrobe = true;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -357,6 +361,22 @@ void Robot::TeleopPeriodic()
         LimelightSlew = demonicslew(LimelightSlew, LimelightDifference);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
+
+        if (!LimelightSlew)
+        {
+            if (LEDStrobe)
+            {
+                LED.Set(-0.55);
+            }
+            else{
+                LED.Set(0.99);
+            }
+            LEDStrobe = !LEDStrobe;
+        }
+        else
+        {
+            LED.Set(0.99);
+        }
     }
     else if (controller.GetBButton())
     {
@@ -371,6 +391,21 @@ void Robot::TeleopPeriodic()
         LimelightSlew = demonicslew(LimelightSlew, LimelightDifference);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
+        if (!LimelightSlew)
+        {
+            if (LEDStrobe)
+            {
+                LED.Set(-0.55);
+            }
+            else{
+                LED.Set(0.99);
+            }
+            LEDStrobe = !LEDStrobe;
+        }
+        else
+        {
+            LED.Set(0.99);
+        }
     }
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());

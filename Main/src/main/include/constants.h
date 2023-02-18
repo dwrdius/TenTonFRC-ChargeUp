@@ -53,7 +53,7 @@ namespace Limelight {
 }
 
 namespace CanIDs {
-    //CAN IDs
+    // Drive Motors
     const int kFLDriveMotor = 3;
     const int kFRDriveMotor = 1;
     const int kBLDriveMotor = 2;
@@ -70,7 +70,21 @@ namespace CanIDs {
     const int kFRCANCoder = 9;
     const int kBLCANCoder = 10;
     const int kBRCANCoder = 12;
+
+
+// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
+
+    // Neo (Intake) Motors
+    const int kIntakeLead = 13;
+    const int kIntakeFollower = 14;
 }
+
+namespace PWMIDs
+{
+    // LED
+    const int kLED = 1;    
+} 
+
 namespace CANCoderOffsets {
         constexpr double kFrontLeft{55.810547};
         constexpr double kFrontRight{84.111328};
