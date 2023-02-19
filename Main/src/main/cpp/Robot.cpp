@@ -34,8 +34,9 @@ frc::PWMSparkMax LED{PWMIDs::kLED};
 auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
 double tx;
 double ty;
+std::vector<double> aprilPos;
 
-bool pipeline = 1;
+int pipeline = 1;
 
 double angleToGoalDegrees;
 double distanceFromLimelightToGoalInches;
@@ -272,12 +273,6 @@ void Robot::RobotInit()
 }
 void Robot::RobotPeriodic() 
 {
-    table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-    tx = table -> GetNumber("tx", 0.0);
-    ty = table -> GetNumber("ty", 0.0);
-    table -> PutNumber("pipeline", pipeline+1);
-    angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
-    distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 }
 
 void Robot::AutonomousInit() 
@@ -348,10 +343,32 @@ void Robot::TeleopPeriodic()
     // .flm is "Front left magnitude" (percentage)
     // .fla is "Front left angle" (degrees)
     // fl[], fr[], bl[], br[]
+    table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    tx = table -> GetNumber("tx", 0.0);
+    ty = table -> GetNumber("ty", 0.0);
+    try{
+        aprilPos = table -> GetNumberArray("botpose_wpiblue", std::vector<double>(6));
+        frc::SmartDashboard::PutNumber("april pos", aprilPos.at(0));
+        frc::SmartDashboard::PutNumber("april pos1", aprilPos.at(1));
+        frc::SmartDashboard::PutNumber("april pos2", aprilPos.at(2));
+        frc::SmartDashboard::PutNumber("april pos3", aprilPos.at(3));
+        frc::SmartDashboard::PutNumber("april pos4", aprilPos.at(4));
+        frc::SmartDashboard::PutNumber("april pos5", aprilPos.at(5));
+        throw 505;
+    }
+    catch (...){
+
+    }
+    angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
+    distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 
     if (controller.GetAButton()) {
-        pipeline = 1;
+        table -> PutNumber("pipeline", 1);
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
+        
+        frc::SmartDashboard::PutNumber("Limelight Distance", LimelightDifference);
+
+
         if (abs(LimelightDifference)>20){
             LimelightDifference = -(std::signbit(tx)-0.5)*2;
         }
@@ -362,16 +379,11 @@ void Robot::TeleopPeriodic()
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
 
+        frc::SmartDashboard::PutNumber("Limelight", LimelightSlew);
+        
         if (!LimelightSlew)
         {
-            if (LEDStrobe)
-            {
-                LED.Set(-0.55);
-            }
-            else{
-                LED.Set(0.99);
-            }
-            LEDStrobe = !LEDStrobe;
+            LED.Set(-0.69);
         }
         else
         {
@@ -380,7 +392,7 @@ void Robot::TeleopPeriodic()
     }
     else if (controller.GetBButton())
     {
-        pipeline = 2;
+        table -> PutNumber("pipeline", 2);
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
         if (abs(LimelightDifference)>20){
             LimelightDifference = -(std::signbit(tx)-0.5)*2;
