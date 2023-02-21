@@ -70,7 +70,7 @@ double getRadian(double x)
 }
 
 // Modes: 0 = drive; 1 = limelight
-double sle w(double currentPercentage, double desiredPercentage, int mode)
+double slew(double currentPercentage, double desiredPercentage, int mode)
 {
     double diff = desiredPercentage-currentPercentage;
     double slewRate=0;
