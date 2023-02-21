@@ -1,0 +1,16 @@
+LED indicates whenever robot is the correct distance away from april tag (reflective tape may not be implemented*)
+
+April tag 3d alignment does not work yet
+- cannot access network table advanced 3d data (?)
+
+Autonomous to move to x,y facing theta is implemented*
+Math simulation works
+
+Intake and neo motors are implemented*
+turn falcon motors by position (not percentage) for intake potentially works?*
+
+Limelight uncalibrated due to mounting change
+
+Cleaned up constants folder and helper file
+
+*not tested
