@@ -15,27 +15,38 @@ namespace mathConst {
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
     const double driveExponent = 2;
 
-    // const double baseWidth = 14.5;             // inches
-    // const double baseLength = 23.25;
+    // const double baseWidth = 15.5;             // inches
+    // const double baseLength = 25.0;
 
     // speed of swivel
     const double swerveMotorSpeed = 0.5;
-
-    const double slew = 0.1;
-
-    const double swerveDeadband = 0.005;
-    const double deadband = 0.2; // DO NOT DECREASE (controller drift was insane)
-    const double deadbandOffset = 1/(1-deadband);
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
     double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
     double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
     
-    // controls how much of the vector addition is dedicated to rotation vs field movement
+    // rotation:translation ratio
     double rotationVectorMultiplier = 1.2; 
+
+    // 360 / circumference of turn = degrees/inch; verified by simulation
+    const double kDegreesPerInchDenominator = 360.0 / (M_PI*2*sqrt(pow(mathConst::xCoords[0], 2) + pow(mathConst::yCoords[0], 2)));
+
+    const double intakeGearRatio = 30*25/16;
+}
+
+namespace Deadbands {
+    const double joyDead = 0.2; // DO NOT DECREASE (controller drift was insane)
+    const double deadOffset = 1/(1-joyDead);
+
+    const double swerveDeadband = 0.005;
+    const double AngleDead = 2; // degrees    
     
-    const double driveVelocity = 1;
-    const double kDegreesPerInchDenominator = (M_PI*2*sqrt(pow(mathConst::xCoords[0], 2) + pow(mathConst::yCoords[0], 2))) / mathConst::driveVelocity / 360.0;
+    const double LLDistanceDead = 5; // inches
+}
+
+namespace Slews {
+    const double driveSlew = 0.1;
+    const double LLSlew = 0.02;
 }
 
 namespace Limelight {
@@ -46,10 +57,7 @@ namespace Limelight {
     const double limelightLensHeightInches = 41.75;
 
     // distance from the target to the floor
-    const double goalHeightInches = 23.5;
-
-    const double LLDistanceDead = 5; //inches (please don't choose 1)
-    const double LLAngleDead = 2; //degrees (0-28)
+    const double goalHeightInches = 23.5;    
 }
 
 namespace CanIDs {
@@ -70,17 +78,18 @@ namespace CanIDs {
     const int kFRCANCoder = 9;
     const int kBLCANCoder = 10;
     const int kBRCANCoder = 12;
-
-
-// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
-
-    // Neo (Intake) Motors
-    const int kIntakeLead = 13;
-    const int kIntakeFollower = 14;
+    
+    //Intake Talon
+    const int kIntakeUpDown = 13;
 }
 
-namespace PWMIDs
-{
+namespace RevIDs {
+// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
+
+    // Intake Motors Neo
+    const int kIntakeMaster = 14;
+    const int kIntakeSlave = 15;
+
     // LED
     const int kLED = 1;    
 } 

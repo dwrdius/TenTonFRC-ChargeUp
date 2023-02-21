@@ -69,10 +69,18 @@ double getRadian(double x)
     return x * M_PI / 180.0;
 }
 
-double slew(double currentPercentage, double desiredPercentage)
+// Modes: 0 = drive; 1 = limelight
+double sle w(double currentPercentage, double desiredPercentage, int mode)
 {
     double diff = desiredPercentage-currentPercentage;
-    double slewRate = mathConst::slew;
+    double slewRate=0;
+    switch (mode) {
+        case 0:
+            slewRate = Slews::driveSlew;
+            break;
+        case 1:
+            slewRate = Slews::LLSlew;
+    }
     if (abs(diff)>=slewRate)
     {
         desiredPercentage = currentPercentage - slewRate*2*(std::signbit(diff)-0.5);
@@ -80,7 +88,6 @@ double slew(double currentPercentage, double desiredPercentage)
     return desiredPercentage;
 }
 
-// Deadband for joystick
 // prevents drift at values close to 0
 // Else converts range from deadband-1 to 0-1
 // 0: Joystick, 1: LL Distance, 2: swerve angle
@@ -88,23 +95,23 @@ double deadband(double input, int mode)
 {
     switch (mode){
         case 0:
-            if (abs(input) <= mathConst::deadband)
+            if (abs(input) <= Deadbands::joyDead)
             {
                 input=0;
             }
             else
             {
-                input = mathConst::deadbandOffset*(input+mathConst::deadband*2*(std::signbit(input)-0.5));
+                input = Deadbands::deadOffset*(input+Deadbands::joyDead*2*(std::signbit(input)-0.5));
             }
             break;
         case 1:
-            if (abs(input) <= Limelight::LLDistanceDead)
+            if (abs(input) <= Deadbands::LLDistanceDead)
             {
                 input=0;
             }
             break;
         case 2:
-            if (abs(input) <= mathConst::swerveDeadband)
+            if (abs(input) <= Deadbands::swerveDeadband)
             {
                 input=0;
             }
@@ -127,12 +134,12 @@ void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, d
 {
     // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
             // limit motor turn speed
-    *swerveState = deadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn)), 2);
+    *swerveState = deadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn), 0), 2);
     m_swerve.Set(TalonFXControlMode::PercentOutput, *swerveState);
 
     // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
     // REMOVE EXPONENT REQUIREMENT AFTER DECIDING ON A CERTAIN EXPONENT
-    *driveState = slew(*driveState, driveCalcs(desiredMag, CANCoder, desiredArg));
+    *driveState = slew(*driveState, driveCalcs(desiredMag, CANCoder, desiredArg), 0);
     m_drive.Set(ControlMode::PercentOutput, *driveState);
 }
 
@@ -148,17 +155,6 @@ void processBaseDimensions (double *xCoords, double *yCoords)
         yCoords[i] = xCoords[i] / mag_int;
         xCoords[i] = intermediate;
     }
-}
-
-double demonicslew(double currentPercentage, double desiredPercentage)
-{
-    double diff = desiredPercentage-currentPercentage;
-    double slewRate = 0.02;
-    if (abs(diff)>=slewRate)
-    {
-        desiredPercentage = currentPercentage - slewRate*2*(std::signbit(diff)-0.5);
-    }
-    return desiredPercentage;
 }
 
 // This is for the autonomous to balance on the charging station
@@ -179,12 +175,6 @@ double getAutoBalanceVelocity(double currentRoll){
 // btw everything breaks with an asymmetrical base
 void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
 {
-    // circumference of circle (inches) = 91.08
-    // degrees moved = x in/s
-    // x degree / s = 0.253
-    // x in / s = mathConst::driveVelocity
-    // change in angle / displacement = y degrees/inch
-    // y / (0.253/driveVelocity) = how much more we want to turn degrees than inches in the same about of time
     mathConst::rotationVectorMultiplier = ((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator;
 }
 

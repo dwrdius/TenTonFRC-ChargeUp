@@ -23,11 +23,22 @@ CANCoder FRCANCoder{CanIDs::kFRCANCoder};
 CANCoder BLCANCoder{CanIDs::kBLCANCoder};
 CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 
+//Intake ---------------------------------------------------------------------------------------
+
+// Intake Neo Motors 
+rev::CANSparkMax IntakeMaster{RevIDs::kIntakeMaster, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+rev::CANSparkMax IntakeSlave{RevIDs::kIntakeSlave, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+
+// Intake Falcons
+TalonFX IntakeUpDown {CanIDs::kIntakeUpDown};
+
+// ----------------------------------------------------------------------------------------------
+
 // Gyro
 AHRS navX{frc::SPI::kMXP};
 
 // LED
-frc::PWMSparkMax LED{PWMIDs::kLED};
+frc::PWMSparkMax LED{RevIDs::kLED};
 
 // wall of not constant variable shame 
 // Limelight shenanigans
@@ -77,6 +88,10 @@ int autoIndex = 0;
 
 bool goBalanceDog = true;
 bool LEDStrobe = true;
+
+// true = down + can intake; false = up
+bool intakeBoolState = true;
+double intakeDefaultState;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -162,9 +177,14 @@ frc::SwerveDriveKinematics<4> kinematics{
   Odometry::kBRLocation
 };
 
-// Convert SelectedSensorPosition (degrees) to Inches.
+// Convert SelectedSensorPosition (TalonFX Units) to Inches.
 units::length::inch_t TalonFXToInches(double selectedSensorPosition) {
-  return units::length::inch_t{(selectedSensorPosition * 4 * M_PI) / 180};
+  return units::length::inch_t{selectedSensorPosition / 2048.0 * 4 * M_PI / 6.75};
+}
+
+// Convert SelectedSensorPosition (TalonFX Units) to Degrees.
+units::angle::degree_t TalonFXToDegrees(double selectedSensorPosition) {
+  return units::angle::degree_t{(selectedSensorPosition * (360.0/2048.0))};
 }
 
 // Creating odometry object from the kinematics object, navX rotation, swerve module positions.
@@ -180,10 +200,11 @@ frc::SwerveDriveOdometry<4> odometry{
   frc::Pose2d{0_in, 0_in, 0_deg}
 };
 
+// array[index][NESW x, NESW y, NESW angle]
 void moveToCoord(double autoCommandList[][3])
 { 
-    diffX = autoCommandList[autoIndex][0] - currentPose.X().value();
-    diffY = autoCommandList[autoIndex][1] - currentPose.Y().value();
+    diffX = autoCommandList[autoIndex][0] + currentPose.Y().value();
+    diffY = autoCommandList[autoIndex][1] - currentPose.X().value();
     diffAngle = fmod(autoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
     translationAngle = atan2(diffX, diffY);
 
@@ -199,13 +220,20 @@ void moveToCoord(double autoCommandList[][3])
     linearDisplacement = magnitude(diffX, diffY);
     autoRotationScalarFromCoords(diffAngle, linearDisplacement);
 
-    linearDisplacement = deadband(linearDisplacement / 48, 1); // 48 inches is the Kp for now
+    linearDisplacement = deadband(linearDisplacement, 1) / 48;  // 48 inches is the Kp for now 
+                                                                //* using limelight distance allowance for this too
     if (!linearDisplacement)
     {
-        autoIndex++;
+        autoDesiredStates = swerveKinematics(0, 0, diffAngle/25, 0); // 25 is an arbitrary Kp again
+        if (!deadband(diffAngle, 2))
+        {
+            autoIndex++;
+        }
     }
-    autoDesiredStates = swerveKinematics(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw());
-
+    else
+    {
+        autoDesiredStates = swerveKinematics(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw());
+    }
     if (autoDesiredStates.fla < 600.0)
     {
         // Update wheel angles for the turn motors to read
@@ -224,6 +252,13 @@ void moveToCoord(double autoCommandList[][3])
 void Robot::RobotInit() 
 {
     processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
+
+    IntakeMaster.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    IntakeSlave.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+
+    IntakeUpDown.SetNeutralMode(NeutralMode::Brake);
+
+    IntakeSlave.Follow(IntakeMaster, true);
 
     FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
     FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
@@ -259,6 +294,8 @@ void Robot::RobotInit()
 
     // Get the rotation of the robot from the gyro.
     frc::Rotation2d rotation = navX.GetRotation2d();
+
+    intakeDefaultState = IntakeUpDown.GetSelectedSensorPosition();
 
     // Reset the pose.
     odometry.ResetPosition(
@@ -362,6 +399,7 @@ void Robot::TeleopPeriodic()
     angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
     distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 
+//Retroreflective Tape Tracking
     if (controller.GetAButton()) {
         table -> PutNumber("pipeline", 1);
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
@@ -375,7 +413,7 @@ void Robot::TeleopPeriodic()
         else {
             LimelightDifference = LimelightDifference/20;
         }
-        LimelightSlew = demonicslew(LimelightSlew, LimelightDifference);
+        LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
 
@@ -390,6 +428,7 @@ void Robot::TeleopPeriodic()
             LED.Set(0.99);
         }
     }
+    //Apriltag tracking
     else if (controller.GetBButton())
     {
         table -> PutNumber("pipeline", 2);
@@ -400,7 +439,7 @@ void Robot::TeleopPeriodic()
         else {
             LimelightDifference = LimelightDifference/20;
         }
-        LimelightSlew = demonicslew(LimelightSlew, LimelightDifference);
+        LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
         if (!LimelightSlew)
@@ -418,6 +457,18 @@ void Robot::TeleopPeriodic()
         {
             LED.Set(0.99);
         }
+    }
+    //Intake's intake mechanism
+    
+    if(controller.GetYButton()){
+        IntakeMaster.Set(1);
+    }
+    
+//Intake up down mechanism
+    if(controller.GetXButtonPressed()){
+        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/95.0)*mathConst::intakeGearRatio);
+        intakeBoolState = !intakeBoolState;
+        
     }
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());

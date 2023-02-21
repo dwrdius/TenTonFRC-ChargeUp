@@ -41,6 +41,8 @@
 // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf for colour config
 #include <frc/motorcontrol/PWMSparkMax.h>
 
+#include <rev/CANSparkMax.h>
+
 class Robot : public frc::TimedRobot {
     public:
         void RobotInit() override;
