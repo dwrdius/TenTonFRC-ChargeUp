@@ -96,7 +96,8 @@ double linearDisplacement;
 double translationAngle;
 int autoIndex = 0;
 
-bool goBalanceDog = true;
+bool balance = false;
+bool onChargingStation = false;
 bool LEDStrobe = true;
 
 // true = down + can intake; false = up
@@ -218,11 +219,11 @@ frc::SwerveDriveOdometry<4> odometry{
 };
 
 // array[index][NESW x, NESW y, NESW angle]
-void moveToCoord(double autoCommandList[][3])
+void moveToCoord()
 { 
-    diffX = autoCommandList[autoIndex][0] + currentPose.Y().value();
-    diffY = autoCommandList[autoIndex][1] - currentPose.X().value();
-    diffAngle = fmod(autoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
+    diffX = autonomous::kAutoCommandList[autoIndex][0] + currentPose.Y().value();
+    diffY = autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value();
+    diffAngle = fmod(autonomous::kAutoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
     translationAngle = atan2(diffX, diffY);
 
     if (diffAngle > 180.0)
@@ -251,19 +252,6 @@ void moveToCoord(double autoCommandList[][3])
     {
         autoDesiredStates = swerveKinematics(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw());
     }
-    if (autoDesiredStates.fla < 600.0)
-    {
-        // Update wheel angles for the turn motors to read
-        desiredTurnFL = autoDesiredStates.fla;
-        desiredTurnFR = autoDesiredStates.fra;
-        desiredTurnBL = autoDesiredStates.bla;
-        desiredTurnBR = autoDesiredStates.bra;
-    }
-
-    setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
-    setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
-    setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
-    setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
 }
 
 void Robot::RobotInit() 
@@ -334,6 +322,15 @@ void Robot::RobotInit()
         frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
         },
         frc::Pose2d{0_m, 0_m, 0_deg});
+    
+    ArmMotor.ConfigPeakOutputReverse(0.01);
+    ShooterTop.ConfigPeakOutputReverse(0.01);
+    ShooterBottom.ConfigPeakOutputReverse(0.01);
+    IntakeUpDown.ConfigPeakOutputReverse(0.01);
+    ArmMotor.ConfigPeakOutputForward(0.01);
+    ShooterTop.ConfigPeakOutputForward(0.01);
+    ShooterBottom.ConfigPeakOutputForward(0.01);
+    IntakeUpDown.ConfigPeakOutputForward(0.01);
 }
 void Robot::RobotPeriodic() 
 {
@@ -391,23 +388,31 @@ void Robot::AutonomousPeriodic()
     frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value());
 
     if(goBalanceDog){
-        double balanceVelocity = getAutoBalanceVelocity(navX.GetRoll());
-        frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
-        frc::SmartDashboard::PutNumber("Roll", navX.GetRoll());
-        frc::SmartDashboard::PutNumber("Pitch", navX.GetPitch());
-        frc::SmartDashboard::PutNumber("balanceVelocity ", balanceVelocity); //debug
-        FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FLCANCoder.GetAbsolutePosition(), 0), 2));
-        FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(FRCANCoder.GetAbsolutePosition(), 0), 2));
-        BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BLCANCoder.GetAbsolutePosition(), 0), 2));
-        BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, deadband(swerveCalcs(BRCANCoder.GetAbsolutePosition(), 0), 2));
-        FLDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
-        FRDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
-        BLDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
-        BRDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
+        double roll = deadband(navX.GetRoll(), 2);
+        if (onChargingStation)
+        {
+            roll = roll / 30;
+        }
+        else{
+            roll = roll/abs(roll);
+        }
+        autoDesiredStates = swerveKinematics(0, roll, deadband(-navX.GetYaw()/20, 2), navX.GetYaw());
     }
     else {
-        moveToCoord(*autonomous::auto_ptr);
+        moveToCoord();
     }
+    if (autoDesiredStates.fla < 600.0)
+    {
+        // Update wheel angles for the turn motors to read
+        desiredTurnFL = autoDesiredStates.fla;
+        desiredTurnFR = autoDesiredStates.fra;
+        desiredTurnBL = autoDesiredStates.bla;
+        desiredTurnBR = autoDesiredStates.bra;
+    }
+    setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+    setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+    setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+    setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
 }
 
 void Robot::TeleopInit() {}
@@ -482,9 +487,13 @@ void Robot::TeleopPeriodic()
     if(controller.GetYButton()){
         IntakeMaster.Set(0.3);
     }
+    else 
+    {
+        IntakeMaster.Set(0);
+    }
     //Intake up down mechanism
     if(controller.GetXButtonPressed()){
-        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/95.0)*mathConst::intakeGearRatio);
+        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/30.0)*mathConst::intakeGearRatio);
         intakeBoolState = !intakeBoolState;
     }
 
@@ -502,10 +511,7 @@ void Robot::TeleopPeriodic()
         ShooterTop.Set(ControlMode::PercentOutput, 0);
         ShooterBottom.Set(ControlMode::PercentOutput, 0);
     }
-// arm lifting with aux controller (manually)
-    ArmMotor.Set(ControlMode::PercentOutput, deadband(controllerAux.GetLeftY(), 0));
-    frc::SmartDashboard::PutNumber("armPos", ArmMotor.GetSelectedSensorPosition()*(360.0/2048.0));
-
+    
 // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
 // this only updates the "desired angle" read by the turn motors if the exit code is not detected
 // 600 is an arbitrary value that is over a full rotation less than 1000 for reduncancy; anything 90<x<1000 works

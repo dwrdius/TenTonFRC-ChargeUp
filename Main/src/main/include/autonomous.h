@@ -8,6 +8,5 @@ namespace autonomous {
         // ...
         {0, 0, 0}
     }; 
-    double (*auto_ptr)[][3] = &kAutoCommandList;
 }
 #endif
