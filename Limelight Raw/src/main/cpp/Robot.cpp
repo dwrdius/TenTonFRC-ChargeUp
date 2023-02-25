@@ -61,7 +61,7 @@ void Robot::AutonomousPeriodic()
 
 void Robot::TeleopInit() {}
 void Robot::TeleopPeriodic()
-{
+{ 
     tx = table -> GetNumber("tx", 0.0);
     ty = table -> GetNumber("ty", 0.0);
     ts = table -> GetNumber("ts", 0.0);
@@ -91,15 +91,15 @@ void Robot::TeleopPeriodic()
     }
     else if (controller.GetBButton())
     {
-        mode = "target-pose_cameraspace";
+        mode = "camerapose_targetspace";
     }
     else if (controller.GetYButton())
     {
-        mode = "targetpose cameraspace";
+        mode = "botpose_cameraspace";
     }
     else if (controller.GetXButton())
     {
-        mode = "target-pose cameraspace";
+        mode = "botpose_wpiblue";
     }
     else if (controller.GetRightTriggerAxis())
     {
