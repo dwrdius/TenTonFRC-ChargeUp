@@ -30,14 +30,15 @@ namespace CanIDs {
     const int kFRCANCoder = 9;
     const int kBLCANCoder = 10;
     const int kBRCANCoder = 12;
-    
+
+    // CANCAN CANivore    
     //Intake Talon
-    const int kIntakeUpDown = 13;
+    const int kIntakeUpDown = 1;
 
     //Arm talons
-    const int kArmMotor = 16;
-    const int kShooterBottom = 17;
-    const int kShooterTop = 18;
+    const int kArmMotor = 2;
+    const int kShooterBottom = 3;
+    const int kShooterTop = 4;
 
 }
 
@@ -45,11 +46,11 @@ namespace RevIDs {
 // TEMP IDs -------------------------------------------------------------------------------------------------------------------------
 
     // Intake Motors Neo
-    const int kIntakeMaster = 14;
-    const int kIntakeSlave = 15;
+    const int kIntakeMaster = 1;
+    const int kIntakeSlave = 2;
 
     // LED
-    const int kLED = 1;    
+    const int kLED = 3;    
 }
 
 namespace mathConst {
@@ -93,10 +94,10 @@ namespace Slews {
 
 namespace Limelight {
     // how many degrees back is your limelight rotated from perfectly vertical?
-    const double limelightMountAngleDegrees = -28.28;
+    const double limelightMountAngleDegrees = -15;
 
     // distance from the center of the Limelight lens to the floor
-    const double limelightLensHeightInches = 41.75;
+    const double limelightLensHeightInches = 38.875;
 
     // distance from the target to the floor
     const double goalHeightInches = 23.5;    

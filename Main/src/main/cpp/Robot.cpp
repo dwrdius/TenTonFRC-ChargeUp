@@ -20,9 +20,12 @@ TalonFX BLSwerveMotor{CanIDs::kBLSwerveMotor};
 TalonFX BRSwerveMotor{CanIDs::kBRSwerveMotor};
 
 // arm shooter motors
-TalonFX ArmMotor{CanIDs::kArmMotor};
-TalonFX ShooterTop{CanIDs::kShooterTop};
-TalonFX ShooterBottom{CanIDs::kShooterBottom};
+TalonFX ArmMotor{CanIDs::kArmMotor, "CANCAN"};
+TalonFX ShooterTop{CanIDs::kShooterTop, "CANCAN"};
+TalonFX ShooterBottom{CanIDs::kShooterBottom, "CANCAN"};
+
+// Intake Falcons
+TalonFX IntakeUpDown {CanIDs::kIntakeUpDown, "CANCAN"};
 
 // Encoders
 CANCoder FLCANCoder{CanIDs::kFLCANCoder};
@@ -30,15 +33,11 @@ CANCoder FRCANCoder{CanIDs::kFRCANCoder};
 CANCoder BLCANCoder{CanIDs::kBLCANCoder};
 CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 
-
 //Intake ---------------------------------------------------------------------------------------
 
 // Intake Neo Motors 
 rev::CANSparkMax IntakeMaster{RevIDs::kIntakeMaster, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 rev::CANSparkMax IntakeSlave{RevIDs::kIntakeSlave, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
-
-// Intake Falcons
-TalonFX IntakeUpDown {CanIDs::kIntakeUpDown};
 
 // ----------------------------------------------------------------------------------------------
 
@@ -422,10 +421,11 @@ void Robot::TeleopPeriodic()
     std::shared_ptr<nt::NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     tx = table -> GetNumber("tx", 0.0);
     ty = table -> GetNumber("ty", 0.0);
+    ty = ty*-1;
     frc::SmartDashboard::PutNumber("tx", tx);
     frc::SmartDashboard::PutNumber("ty", ty);
     
-    angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
+    angleToGoalDegrees = Limelight::limelightMountAngleDegrees + tx;
     distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 
     frc::SmartDashboard::PutNumber("Limelight Distance", LimelightDifference);
@@ -436,14 +436,14 @@ void Robot::TeleopPeriodic()
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
     
         if (abs(LimelightDifference)>20){
-            LimelightDifference = -(std::signbit(tx)-0.5)*2;
+            LimelightDifference = -(std::signbit(ty)-0.5)*2;
         }
         else {
             LimelightDifference = LimelightDifference/20;
         }
         LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
-        moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
+        moduleDesiredStates = swerveKinematics(0, LimelightSlew, ty/28, 0);
 
         frc::SmartDashboard::PutNumber("Limelight", LimelightSlew);
         
@@ -460,6 +460,19 @@ void Robot::TeleopPeriodic()
     {
         //Apriltag tracking
         table -> PutNumber("pipeline", 2);
+        
+        int desiredRotation = aprilAlign(navX.GetYaw());
+
+        LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
+    
+        if (abs(LimelightDifference)>20){
+            LimelightDifference = -(std::signbit(ty)-0.5)*2;
+        }
+        else {
+            LimelightDifference = LimelightDifference/20;
+        }
+        LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
+        moduleDesiredStates = swerveKinematics(deadband(desiredRotation-fmod(navX.GetYaw(), 360.0), 2), LimelightSlew, ty/20, 0);
     }
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());
@@ -478,12 +491,16 @@ void Robot::TeleopPeriodic()
     frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
 
     if (controllerAux.GetXButton()){
-        ShooterTop.Set(ControlMode::PercentOutput, 0.4);
+        ShooterTop.Set(ControlMode::PercentOutput, -0.4);
         ShooterBottom.Set(ControlMode::PercentOutput, -0.4);
     }
-    if (controllerAux.GetYButton()){
-        ShooterTop.Set(ControlMode::PercentOutput, -0.8);
+    else if (controllerAux.GetYButton()){
+        ShooterTop.Set(ControlMode::PercentOutput, 0.8);
         ShooterBottom.Set(ControlMode::PercentOutput, 0.9);
+    }
+    else {
+        ShooterTop.Set(ControlMode::PercentOutput, 0);
+        ShooterBottom.Set(ControlMode::PercentOutput, 0);
     }
 // arm lifting with aux controller (manually)
     ArmMotor.Set(ControlMode::PercentOutput, deadband(controllerAux.GetLeftY(), 0));

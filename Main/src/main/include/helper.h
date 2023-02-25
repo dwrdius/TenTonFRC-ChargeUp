@@ -172,6 +172,16 @@ double getAutoBalanceVelocity(double currentRoll){
     return balanceVelocity;
 }
 
+double aprilAlign (double NavX)
+    {
+        NavX = fmod(NavX, 360.0);
+        if (NavX < -180.0 || (NavX < 180.0 && NavX > 0))
+        {
+            return 90;
+        }
+        return -90;
+    }
+
 // btw everything breaks with an asymmetrical base
 void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
 {
