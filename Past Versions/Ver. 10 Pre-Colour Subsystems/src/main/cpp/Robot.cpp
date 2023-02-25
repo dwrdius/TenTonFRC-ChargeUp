@@ -48,9 +48,6 @@ AHRS navX{frc::SPI::kMXP};
 // LED
 frc::PWMSparkMax LED{RevIDs::kLED};
 
-// Colour Sensor
-rev::ColorSensorV3 m_colorSensor{Colours::i2cPort};
-
 // wall of not constant variable shame 
 // Limelight shenanigans
 auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
@@ -103,13 +100,6 @@ bool LEDStrobe = true;
 // true = down + can intake; false = up
 bool intakeBoolState = true;
 double intakeDefaultState;
-
-// colour
-rev::ColorMatch m_colorMatcher;
-frc::Color detectedColor;
-std::string colorstring;
-frc::Color matchedColor;
-double confidence;
 
 // all doubles
 // order: front left magnitude, front left angle, frm, fra, blm, bla, brm, bra
@@ -269,18 +259,19 @@ void moveToCoord(double autoCommandList[][3])
 
 void Robot::RobotInit() 
 {
-    processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
-
-    m_colorMatcher.AddColorMatch(Colours::KYellowTarget);
-    m_colorMatcher.AddColorMatch(Colours::KPurpleTarget);
-
     ArmMotor.ConfigForwardSoftLimitThreshold(90/360*2048 * mathConst::armGearRatio); //experimental will change
     ArmMotor.ConfigForwardSoftLimitEnable(true);
     ArmMotor.ConfigReverseSoftLimitThreshold(0); //dunno reverse is up or down tho moooooo
     ArmMotor.ConfigReverseSoftLimitEnable(true);
 
+
+    processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
+
     IntakeMaster.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
     IntakeSlave.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+
+    IntakeUpDown.SetNeutralMode(NeutralMode::Brake);
+
     IntakeSlave.Follow(IntakeMaster, true);
 
     FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
@@ -296,7 +287,6 @@ void Robot::RobotInit()
     ArmMotor.SetNeutralMode(NeutralMode::Brake);
     ShooterTop.SetNeutralMode(NeutralMode::Brake);
     ShooterBottom.SetNeutralMode(NeutralMode::Brake);
-    IntakeUpDown.SetNeutralMode(NeutralMode::Brake);
 
     navX.ZeroYaw();
 
@@ -338,21 +328,6 @@ void Robot::RobotInit()
 }
 void Robot::RobotPeriodic() 
 {
-    detectedColor = m_colorSensor.GetColor();
-    matchedColor = m_colorMatcher.MatchClosestColor(detectedColor, confidence);
-    if(matchedColor == Colours::KYellowTarget) {
-        colorstring = "Yellow";
-    }
-    else if (matchedColor == Colours::KPurpleTarget){
-        colorstring = "Purple";
-    }
-    frc::SmartDashboard::PutNumber("Red", detectedColor.red);
-    frc::SmartDashboard::PutNumber("Blue", detectedColor.blue);
-    frc::SmartDashboard::PutNumber("Green", detectedColor.green);
-    frc::SmartDashboard::PutNumber("Confidence", confidence);
-    frc::SmartDashboard::PutString("Detected Color", colorstring);
-    uint32_t proximity = m_colorSensor.GetProximity();
-    frc::SmartDashboard::PutNumber("Proximity", proximity);
 }
 
 void Robot::AutonomousInit() 
@@ -381,15 +356,17 @@ void Robot::AutonomousPeriodic()
     currentPose = odometry.Update(
         rotation,
         {
-            frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
-            frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
-            frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
-            frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+        frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+        frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
         });
 
     // Display currentPose and rotation on SmartDashboard.
     frc::SmartDashboard::PutNumber("X ", currentPose.X().value());
     frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value());
+
+
 
     if(goBalanceDog){
         double balanceVelocity = getAutoBalanceVelocity(navX.GetRoll());
@@ -406,6 +383,9 @@ void Robot::AutonomousPeriodic()
         BLDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
         BRDriveMotor.Set(TalonFXControlMode::PercentOutput, balanceVelocity);
     }
+    else if(fabs(navX.GetRoll())>(11)){
+        goBalanceDog = true;
+    }
     else {
         moveToCoord(*autonomous::auto_ptr);
     }
@@ -418,23 +398,35 @@ void Robot::TeleopPeriodic()
     // .flm is "Front left magnitude" (percentage)
     // .fla is "Front left angle" (degrees)
     // fl[], fr[], bl[], br[]
-    
     std::shared_ptr<nt::NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     tx = table -> GetNumber("tx", 0.0);
     ty = table -> GetNumber("ty", 0.0);
     frc::SmartDashboard::PutNumber("tx", tx);
     frc::SmartDashboard::PutNumber("ty", ty);
-    
+    try{
+        aprilPos = table -> GetNumberArray("botpose_wpiblue", std::vector<double>(6));
+        frc::SmartDashboard::PutNumber("april pos", aprilPos.at(0));
+        frc::SmartDashboard::PutNumber("april pos1", aprilPos.at(1));
+        frc::SmartDashboard::PutNumber("april pos2", aprilPos.at(2));
+        frc::SmartDashboard::PutNumber("april pos3", aprilPos.at(3));
+        frc::SmartDashboard::PutNumber("april pos4", aprilPos.at(4));
+        frc::SmartDashboard::PutNumber("april pos5", aprilPos.at(5));
+        throw 505;
+    }
+    catch (...){
+
+    }
     angleToGoalDegrees = Limelight::limelightMountAngleDegrees + ty;
     distanceFromLimelightToGoalInches = (Limelight::goalHeightInches - Limelight::limelightLensHeightInches)/tan(getRadian(angleToGoalDegrees));
 
-    frc::SmartDashboard::PutNumber("Limelight Distance", LimelightDifference);
-
+//Retroreflective Tape Tracking
     if (controller.GetAButton()) {
-        //Retroreflective Tape Tracking
         table -> PutNumber("pipeline", 1);
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
-    
+        
+        frc::SmartDashboard::PutNumber("Limelight Distance", LimelightDifference);
+
+
         if (abs(LimelightDifference)>20){
             LimelightDifference = -(std::signbit(tx)-0.5)*2;
         }
@@ -456,38 +448,64 @@ void Robot::TeleopPeriodic()
             LED.Set(0.99);
         }
     }
+    //Apriltag tracking
     else if (controller.GetBButton())
     {
-        //Apriltag tracking
         table -> PutNumber("pipeline", 2);
+        LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
+        if (abs(LimelightDifference)>20){
+            LimelightDifference = -(std::signbit(tx)-0.5)*2;
+        }
+        else {
+            LimelightDifference = LimelightDifference/20;
+        }
+        LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
+        frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
+        moduleDesiredStates = swerveKinematics(0, LimelightSlew, tx/28, 180);
+        if (!LimelightSlew)
+        {
+            if (LEDStrobe)
+            {
+                LED.Set(-0.55);
+            }
+            else{
+                LED.Set(0.99);
+            }
+            LEDStrobe = !LEDStrobe;
+        }
+        else
+        {
+            LED.Set(0.99);
+        }
+    }
+    //Intake's intake mechanism
+    
+    if(controller.GetYButton()){
+        IntakeMaster.Set(1);
+    }
+    
+//Intake up down mechanism
+    if(controller.GetXButtonPressed()){
+        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/95.0)*mathConst::intakeGearRatio);
+        intakeBoolState = !intakeBoolState;
+        
     }
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());
     }
-
-    //Intake's intake mechanism
-    if(controller.GetYButton()){
-        IntakeMaster.Set(0.3);
-    }
-    //Intake up down mechanism
-    if(controller.GetXButtonPressed()){
-        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/95.0)*mathConst::intakeGearRatio);
-        intakeBoolState = !intakeBoolState;
-    }
-
     frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
 
-    if (controllerAux.GetXButton()){
-        ShooterTop.Set(ControlMode::PercentOutput, 0.4);
-        ShooterBottom.Set(ControlMode::PercentOutput, -0.4);
-    }
-    if (controllerAux.GetYButton()){
-        ShooterTop.Set(ControlMode::PercentOutput, -0.8);
-        ShooterBottom.Set(ControlMode::PercentOutput, 0.9);
-    }
-// arm lifting with aux controller (manually)
-    ArmMotor.Set(ControlMode::PercentOutput, deadband(controllerAux.GetLeftY(), 0));
-    frc::SmartDashboard::PutNumber("armPos", ArmMotor.GetSelectedSensorPosition()*(360.0/2048.0));
+//     if (controllerAux.GetXButton()){
+//         ShooterTop.Set(ControlMode::PercentOutput, 0.4);
+//         ShooterBottom.Set(ControlMode::PercentOutput, -0.4);
+//     }
+//     if (controllerAux.GetYButton()){
+//         ShooterTop.Set(ControlMode::PercentOutput, -0.8);
+//         ShooterBottom.Set(ControlMode::PercentOutput, 0.9);
+//     }
+// // arm lifting with aux controller (manually)
+//     ArmMotor.Set(ControlMode::PercentOutput, controllerAux.GetLeftY());
+//     frc::SmartDashboard::PutNumber("armPos", ArmMotor.GetSelectedSensorPosition()*(360.0/2048.0));
 
 // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
 // this only updates the "desired angle" read by the turn motors if the exit code is not detected
@@ -520,7 +538,9 @@ void Robot::TeleopPeriodic()
     frc::SmartDashboard::PutNumber("Yaw", navX.GetAngle());
     frc::SmartDashboard::PutNumber("Roll", navX.GetRoll());
     frc::SmartDashboard::PutNumber("Pitch", navX.GetPitch());
+    frc::SmartDashboard::PutNumber("Rate", navX.GetRate());
 
+// --------- this section is for testing; kenta chooses which features stay and the trigger things are only for configuring preference
     // Zero gyro (press d-pad in whatever direction the PDP is relative to the North you want)
     if (controller.GetPOV()!=-1)
     {

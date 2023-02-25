@@ -44,13 +44,6 @@
 // https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf for colour config
 #include <frc/motorcontrol/PWMSparkMax.h>
 
-// Colour
-#include "rev/ColorSensorV3.h"
-#include "rev/ColorMatch.h"
-#include <frc/util/Color.h>
-#include <frc/I2C.h>
-
-// Neo
 #include <rev/CANSparkMax.h>
 
 class Robot : public frc::TimedRobot {

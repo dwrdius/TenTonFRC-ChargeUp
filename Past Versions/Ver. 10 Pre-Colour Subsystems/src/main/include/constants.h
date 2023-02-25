@@ -4,52 +4,11 @@
 #include <cmath>
 
 #include <frc/geometry/Translation2d.h>
-#include <frc/util/Color.h>
 
 namespace ControllerIDs {
     //USB port addresses on drivestation PC.
     constexpr int kControllerMainID = 0;
     constexpr int kControllerAuxID = 1;
-}
-
-namespace CanIDs {
-    // Drive Motors
-    const int kFLDriveMotor = 3;
-    const int kFRDriveMotor = 1;
-    const int kBLDriveMotor = 2;
-    const int kBRDriveMotor = 4;
-
-    // Swerve Motors
-    const int kFLSwerveMotor = 7;
-    const int kFRSwerveMotor = 5;
-    const int kBLSwerveMotor = 6;
-    const int kBRSwerveMotor = 8;
-
-    // Encoders
-    const int kFLCANCoder = 11;
-    const int kFRCANCoder = 9;
-    const int kBLCANCoder = 10;
-    const int kBRCANCoder = 12;
-    
-    //Intake Talon
-    const int kIntakeUpDown = 13;
-
-    //Arm talons
-    const int kArmMotor = 16;
-    const int kShooterBottom = 17;
-    const int kShooterTop = 18;
-
-}
-
-namespace RevIDs {
-// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
-
-    // Intake Motors Neo
-    const int kIntakeMaster = 14;
-    const int kIntakeSlave = 15;
-
-    // LED
-    const int kLED = 1;    
 }
 
 namespace mathConst {
@@ -101,11 +60,45 @@ namespace Limelight {
     // distance from the target to the floor
     const double goalHeightInches = 23.5;    
 }
+
+namespace CanIDs {
+    // Drive Motors
+    const int kFLDriveMotor = 3;
+    const int kFRDriveMotor = 1;
+    const int kBLDriveMotor = 2;
+    const int kBRDriveMotor = 4;
+
+    // Swerve Motors
+    const int kFLSwerveMotor = 7;
+    const int kFRSwerveMotor = 5;
+    const int kBLSwerveMotor = 6;
+    const int kBRSwerveMotor = 8;
+
+    // Encoders
+    const int kFLCANCoder = 11;
+    const int kFRCANCoder = 9;
+    const int kBLCANCoder = 10;
+    const int kBRCANCoder = 12;
     
-namespace Colours {
-    static const auto i2cPort = frc::I2C::Port::kOnboard;
-    static const frc::Color KYellowTarget = frc::Color(0.4, 0.45, 0.1);
-    static const frc::Color KPurpleTarget = frc::Color(0.27, 0.4, 0.2);
+    //Intake Talon
+    const int kIntakeUpDown = 13;
+
+    //Arm talons
+    const int kArmMotor = 16;
+    const int kShooterBottom = 17;
+    const int kShooterTop = 18;
+
+}
+
+namespace RevIDs {
+// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
+
+    // Intake Motors Neo
+    const int kIntakeMaster = 14;
+    const int kIntakeSlave = 15;
+
+    // LED
+    const int kLED = 1;    
 } 
 
 namespace CANCoderOffsets {
