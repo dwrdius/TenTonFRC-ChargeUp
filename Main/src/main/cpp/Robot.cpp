@@ -4,6 +4,8 @@
 
 // Main Controller
 frc::XboxController controller{ControllerIDs::kControllerMainID};
+//secondary controller
+frc::XboxController controllerAux{ControllerIDs::kControllerAuxID};
 
 // Drive Motors
 TalonFX FLDriveMotor{CanIDs::kFLDriveMotor};
@@ -17,11 +19,17 @@ TalonFX FRSwerveMotor{CanIDs::kFRSwerveMotor};
 TalonFX BLSwerveMotor{CanIDs::kBLSwerveMotor};
 TalonFX BRSwerveMotor{CanIDs::kBRSwerveMotor};
 
+// arm shooter motors
+TalonFX ArmMotor{CanIDs::kArmMotor};
+TalonFX ShooterTop{CanIDs::kShooterTop};
+TalonFX ShooterBottom{CanIDs::kShooterBottom};
+
 // Encoders
 CANCoder FLCANCoder{CanIDs::kFLCANCoder};
 CANCoder FRCANCoder{CanIDs::kFRCANCoder};
 CANCoder BLCANCoder{CanIDs::kBLCANCoder};
 CANCoder BRCANCoder{CanIDs::kBRCANCoder};
+
 
 //Intake ---------------------------------------------------------------------------------------
 
@@ -251,6 +259,12 @@ void moveToCoord(double autoCommandList[][3])
 
 void Robot::RobotInit() 
 {
+    ArmMotor.ConfigForwardSoftLimitThreshold(90/360*2048 * mathConst::armGearRatio); //experimental will change
+    ArmMotor.ConfigForwardSoftLimitEnable(true);
+    ArmMotor.ConfigReverseSoftLimitThreshold(0); //dunno reverse is up or down tho moooooo
+    ArmMotor.ConfigReverseSoftLimitEnable(true);
+
+
     processBaseDimensions(mathConst::xCoords, mathConst::yCoords);
 
     IntakeMaster.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
@@ -269,6 +283,10 @@ void Robot::RobotInit()
     FRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
     BLSwerveMotor.SetNeutralMode(NeutralMode::Brake);
     BRSwerveMotor.SetNeutralMode(NeutralMode::Brake);
+
+    ArmMotor.SetNeutralMode(NeutralMode::Brake);
+    ShooterTop.SetNeutralMode(NeutralMode::Brake);
+    ShooterBottom.SetNeutralMode(NeutralMode::Brake);
 
     navX.ZeroYaw();
 
@@ -380,9 +398,11 @@ void Robot::TeleopPeriodic()
     // .flm is "Front left magnitude" (percentage)
     // .fla is "Front left angle" (degrees)
     // fl[], fr[], bl[], br[]
-    table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    std::shared_ptr<nt::NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     tx = table -> GetNumber("tx", 0.0);
     ty = table -> GetNumber("ty", 0.0);
+    frc::SmartDashboard::PutNumber("tx", tx);
+    frc::SmartDashboard::PutNumber("ty", ty);
     try{
         aprilPos = table -> GetNumberArray("botpose_wpiblue", std::vector<double>(6));
         frc::SmartDashboard::PutNumber("april pos", aprilPos.at(0));
@@ -474,9 +494,22 @@ void Robot::TeleopPeriodic()
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());
     }
     frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
-    // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
-    // this only updates the "desired angle" read by the turn motors if the exit code is not detected
-    // 600 is an arbitrary value that is over a full rotation less than 1000 for reduncancy; anything 90<x<1000 works
+
+//     if (controllerAux.GetXButton()){
+//         ShooterTop.Set(ControlMode::PercentOutput, 0.4);
+//         ShooterBottom.Set(ControlMode::PercentOutput, -0.4);
+//     }
+//     if (controllerAux.GetYButton()){
+//         ShooterTop.Set(ControlMode::PercentOutput, -0.8);
+//         ShooterBottom.Set(ControlMode::PercentOutput, 0.9);
+//     }
+// // arm lifting with aux controller (manually)
+//     ArmMotor.Set(ControlMode::PercentOutput, controllerAux.GetLeftY());
+//     frc::SmartDashboard::PutNumber("armPos", ArmMotor.GetSelectedSensorPosition()*(360.0/2048.0));
+
+// when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
+// this only updates the "desired angle" read by the turn motors if the exit code is not detected
+// 600 is an arbitrary value that is over a full rotation less than 1000 for reduncancy; anything 90<x<1000 works
     if (moduleDesiredStates.fla < 600.0)
     {
         // Update wheel angles for the turn motors to read
