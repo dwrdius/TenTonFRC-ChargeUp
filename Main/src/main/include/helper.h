@@ -83,7 +83,7 @@ double slew(double currentPercentage, double desiredPercentage, int mode)
     }
     if (abs(diff)>=slewRate)
     {
-        desiredPercentage = currentPercentage - slewRate*2*(std::signbit(diff)-0.5);
+        desiredPercentage = currentPercentage + slewRate*diff/abs(diff);
     }
     return desiredPercentage;
 }
@@ -101,7 +101,7 @@ double deadband(double input, int mode)
             }
             else
             {
-                input = Deadbands::deadOffset*(input+Deadbands::joyDead*2*(std::signbit(input)-0.5));
+                input = Deadbands::deadOffset*(input-Deadbands::joyDead*input/fabs(input));
             }
             break;
         case 1:

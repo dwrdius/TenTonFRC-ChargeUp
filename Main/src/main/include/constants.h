@@ -46,11 +46,11 @@ namespace RevIDs {
 // TEMP IDs -------------------------------------------------------------------------------------------------------------------------
 
     // Intake Motors Neo
-    const int kIntakeMaster = 1;
-    const int kIntakeSlave = 2;
+    const int kIntakeMaster = 14;
+    const int kIntakeSlave = 13;
 
     // LED
-    const int kLED = 3;    
+    const int kLED = 1;    
 }
 
 namespace mathConst {
@@ -104,7 +104,6 @@ namespace Limelight {
 }
     
 namespace Colours {
-    static const auto i2cPort = frc::I2C::Port::kOnboard;
     static const frc::Color KYellowTarget = frc::Color(0.4, 0.45, 0.1);
     static const frc::Color KPurpleTarget = frc::Color(0.27, 0.4, 0.2);
 } 

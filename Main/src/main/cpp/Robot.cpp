@@ -48,7 +48,7 @@ AHRS navX{frc::SPI::kMXP};
 frc::PWMSparkMax LED{RevIDs::kLED};
 
 // Colour Sensor
-rev::ColorSensorV3 m_colorSensor{Colours::i2cPort};
+rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
 
 // wall of not constant variable shame 
 // Limelight shenanigans
@@ -387,7 +387,7 @@ void Robot::AutonomousPeriodic()
     frc::SmartDashboard::PutNumber("X ", currentPose.X().value());
     frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value());
 
-    if(goBalanceDog){
+    if(balance){
         double roll = deadband(navX.GetRoll(), 2);
         if (onChargingStation)
         {
@@ -441,7 +441,7 @@ void Robot::TeleopPeriodic()
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
     
         if (abs(LimelightDifference)>20){
-            LimelightDifference = -(std::signbit(ty)-0.5)*2;
+            LimelightDifference = ty/abs(ty);
         }
         else {
             LimelightDifference = LimelightDifference/20;
@@ -471,7 +471,7 @@ void Robot::TeleopPeriodic()
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
     
         if (abs(LimelightDifference)>20){
-            LimelightDifference = -(std::signbit(ty)-0.5)*2;
+            LimelightDifference = ty/abs(ty);
         }
         else {
             LimelightDifference = LimelightDifference/20;
