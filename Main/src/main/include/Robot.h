@@ -32,6 +32,7 @@
 #include "constants.h"
 #include "helper.h"
 #include "autonomous.h"
+#include "configs.h"
 
 // Limelight libraries
 #include "networktables/NetworkTable.h"

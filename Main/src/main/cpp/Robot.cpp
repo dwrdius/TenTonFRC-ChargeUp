@@ -36,8 +36,8 @@ CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 //Intake ---------------------------------------------------------------------------------------
 
 // Intake Neo Motors 
-rev::CANSparkMax IntakeMaster{RevIDs::kIntakeMaster, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
-rev::CANSparkMax IntakeSlave{RevIDs::kIntakeSlave, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+rev::CANSparkMax IntakeLeader{RevIDs::kIntakeLeader, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+rev::CANSparkMax IntakeFollower{RevIDs::kIntakeFollower, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 
 // ----------------------------------------------------------------------------------------------
 
@@ -261,14 +261,14 @@ void Robot::RobotInit()
     m_colorMatcher.AddColorMatch(Colours::KYellowTarget);
     m_colorMatcher.AddColorMatch(Colours::KPurpleTarget);
 
-    ArmMotor.ConfigForwardSoftLimitThreshold(90/360*2048 * mathConst::armGearRatio); //experimental will change
-    ArmMotor.ConfigForwardSoftLimitEnable(true);
-    ArmMotor.ConfigReverseSoftLimitThreshold(0); //dunno reverse is up or down tho moooooo
-    ArmMotor.ConfigReverseSoftLimitEnable(true);
+    //Soft limits (motor, forward limit, reverse limit, gear ratio)
+    setTalonSoftLimit(ArmMotor, 90, 0, mathConst::armGearRatio);
+    setTalonSoftLimit(IntakeUpDown, 0, -90, mathConst::intakeGearRatio);
 
-    IntakeMaster.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
-    IntakeSlave.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
-    IntakeSlave.Follow(IntakeMaster, true);
+    //Set Leader Follower motors (previously Master)
+    IntakeLeader.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    IntakeFollower.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+    IntakeFollower.Follow(IntakeLeader, true);
 
     FLDriveMotor.SetNeutralMode(NeutralMode::Brake);
     FRDriveMotor.SetNeutralMode(NeutralMode::Brake);
@@ -466,7 +466,8 @@ void Robot::TeleopPeriodic()
         //Apriltag tracking
         table -> PutNumber("pipeline", 2);
         
-        int desiredRotation = aprilAlign(navX.GetYaw());
+        // 180 is perpendicular to tags
+        int desiredRotation = 180;
 
         LimelightDifference = deadband(distanceFromLimelightToGoalInches-45, 1); // 50 = desired
     
@@ -485,11 +486,11 @@ void Robot::TeleopPeriodic()
 
     //Intake's intake mechanism
     if(controller.GetYButton()){
-        IntakeMaster.Set(0.3);
+        IntakeLeader.Set(0.3);
     }
     else 
     {
-        IntakeMaster.Set(0);
+        IntakeLeader.Set(0);
     }
     //Intake up down mechanism
     if(controller.GetXButtonPressed()){

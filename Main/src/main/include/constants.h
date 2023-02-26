@@ -46,8 +46,8 @@ namespace RevIDs {
 // TEMP IDs -------------------------------------------------------------------------------------------------------------------------
 
     // Intake Motors Neo
-    const int kIntakeMaster = 14;
-    const int kIntakeSlave = 13;
+    const int kIntakeLeader = 14;
+    const int kIntakeFollower = 13;
 
     // LED
     const int kLED = 1;    
