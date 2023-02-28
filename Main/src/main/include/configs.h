@@ -1,8 +1,8 @@
 void setTalonSoftLimit(TalonFX& motor, int forwardLimit, int reverseLimit, int gearRatio)
 {
-    motor.ConfigForwardSoftLimitThreshold(forwardLimit/360*2048 * gearRatio, 0);
+    motor.ConfigForwardSoftLimitThreshold(forwardLimit * 2048/360 * gearRatio, 0);
     motor.ConfigForwardSoftLimitEnable(true, 0);
-    motor.ConfigForwardSoftLimitThreshold(reverseLimit/360*2048 * gearRatio, 0);
+    motor.ConfigForwardSoftLimitThreshold(reverseLimit * 2048/360 * gearRatio, 0);
     motor.ConfigForwardSoftLimitEnable(true, 0);
 }
 

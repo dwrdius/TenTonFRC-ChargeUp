@@ -55,7 +55,7 @@ namespace RevIDs {
 
 namespace mathConst {
     const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
-    const double driveExponent = 2;
+    const double driveExponent = 4;
 
     // const double baseWidth = 15.5;             // inches
     // const double baseLength = 25.0;
@@ -68,13 +68,13 @@ namespace mathConst {
     double yCoords[4] = {12.5, 12.5, -12.5, -12.5};
     
     // rotation:translation ratio
-    double rotationVectorMultiplier = 1.2; 
+    double rotationVectorMultiplier = 0.8; 
 
     // 360 / circumference of turn = degrees/inch; verified by simulation
     const double kDegreesPerInchDenominator = 360.0 / (M_PI*2*sqrt(pow(mathConst::xCoords[0], 2) + pow(mathConst::yCoords[0], 2)));
 
-    const double intakeGearRatio = 30*25/16;
-    const double armGearRatio = 1/30;
+    const double intakeGearRatio = 30*32/16;
+    const double armGearRatio = 30;
 }
 
 namespace Deadbands {
@@ -88,7 +88,7 @@ namespace Deadbands {
 }
 
 namespace Slews {
-    const double driveSlew = 0.1;
+    const double driveSlew = 0.03;
     const double LLSlew = 0.02;
 }
 

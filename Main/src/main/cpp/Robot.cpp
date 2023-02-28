@@ -39,8 +39,6 @@ CANCoder BRCANCoder{CanIDs::kBRCANCoder};
 rev::CANSparkMax IntakeLeader{RevIDs::kIntakeLeader, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 rev::CANSparkMax IntakeFollower{RevIDs::kIntakeFollower, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 
-// ----------------------------------------------------------------------------------------------
-
 // Gyro
 AHRS navX{frc::SPI::kMXP};
 
@@ -49,6 +47,8 @@ frc::PWMSparkMax LED{RevIDs::kLED};
 
 // Colour Sensor
 rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
+
+double pos; 
 
 // wall of not constant variable shame 
 // Limelight shenanigans
@@ -262,10 +262,17 @@ void Robot::RobotInit()
     m_colorMatcher.AddColorMatch(Colours::KPurpleTarget);
 
     //Soft limits (motor, forward limit, reverse limit, gear ratio)
-    setTalonSoftLimit(ArmMotor, 30, -30, mathConst::armGearRatio);
-    setTalonSoftLimit(IntakeUpDown, 0, -90, mathConst::intakeGearRatio);
+    // setTalonSoftLimit(ArmMotor, 30, -30, mathConst::armGearRatio);
+    ArmMotor.ConfigForwardSoftLimitEnable(false,0);
+    ArmMotor.ConfigReverseSoftLimitEnable(false, 0);
+    // setTalonSoftLimit(IntakeUpDown, 0, -90, mathConst::intakeGearRatio);
+
+    IntakeUpDown.ConfigForwardSoftLimitEnable(false,0);
+    IntakeUpDown.ConfigReverseSoftLimitEnable(false, 0);
 
     //Set Leader Follower motors (previously Master)
+    IntakeLeader.RestoreFactoryDefaults();
+    IntakeFollower.RestoreFactoryDefaults();
     IntakeLeader.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
     IntakeFollower.SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
     IntakeFollower.Follow(IntakeLeader, true);
@@ -298,14 +305,14 @@ void Robot::RobotInit()
         },
         frc::Pose2d{0_m, 0_m, 0_deg});
     
-    ArmMotor.ConfigPeakOutputReverse(0.01);
-    ShooterTop.ConfigPeakOutputReverse(0.01);
-    ShooterBottom.ConfigPeakOutputReverse(0.01);
-    IntakeUpDown.ConfigPeakOutputReverse(0.01);
-    ArmMotor.ConfigPeakOutputForward(0.01);
-    ShooterTop.ConfigPeakOutputForward(0.01);
-    ShooterBottom.ConfigPeakOutputForward(0.01);
-    IntakeUpDown.ConfigPeakOutputForward(0.01);
+    ArmMotor.ConfigPeakOutputReverse(-0.2);
+    ShooterTop.ConfigPeakOutputReverse(-0.8);
+    ShooterBottom.ConfigPeakOutputReverse(-0.8);
+    IntakeUpDown.ConfigPeakOutputReverse(-0.1);
+    ArmMotor.ConfigPeakOutputForward(0.2);
+    ShooterTop.ConfigPeakOutputForward(0.8);
+    ShooterBottom.ConfigPeakOutputForward(0.8);
+    IntakeUpDown.ConfigPeakOutputForward(0.1);
 }
 void Robot::RobotPeriodic() 
 {
@@ -390,7 +397,10 @@ void Robot::AutonomousPeriodic()
     setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
 }
 
-void Robot::TeleopInit() {}
+void Robot::TeleopInit() 
+{
+    IntakeUpDown.SetSelectedSensorPosition(0);
+}
 void Robot::TeleopPeriodic()
 {
     // moduleDesiredStates contains all calculated desired values.
@@ -423,7 +433,7 @@ void Robot::TeleopPeriodic()
         }
         LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
         frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
-        moduleDesiredStates = swerveKinematics(0, LimelightSlew, ty/28, 0);
+        moduleDesiredStates = swerveKinematics(0, LimelightSlew, ty/28, 180);
 
         frc::SmartDashboard::PutNumber("Limelight", LimelightSlew);
         
@@ -453,25 +463,46 @@ void Robot::TeleopPeriodic()
             LimelightDifference = LimelightDifference/20;
         }
         LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
-        moduleDesiredStates = swerveKinematics(deadband(desiredRotation-fmod(navX.GetYaw(), 360.0), 2), LimelightSlew, ty/20, 0);
+        moduleDesiredStates = swerveKinematics(deadband(desiredRotation-fmod(navX.GetYaw()+1080.0, 360.0), 2), LimelightSlew, ty/20, 180);
+
+        if (!LimelightSlew)
+        {
+            LED.Set(-0.69);
+        }
+        else
+        {
+            LED.Set(0.99);
+        }
     }
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle());
     }
 
-    //Intake's intake mechanism
-    if(controller.GetYButton()){
-        IntakeLeader.Set(0.3);
-    }
-    else 
+    // //Intake's intake mechanism
+    if(controllerAux.GetAButton())
     {
-        IntakeLeader.Set(0);
+      IntakeLeader.Set(0.2);
+    }
+    else if (controllerAux.GetBButton())
+    {
+      IntakeLeader.Set(-0.2);
+    }
+    else
+    {
+      IntakeLeader.Set(0);
     }
     //Intake up down mechanism
+    frc::SmartDashboard::PutNumber("default", intakeDefaultState);
+    frc::SmartDashboard::PutNumber("position", pos);
+    frc::SmartDashboard::PutNumber("sensor pos", IntakeUpDown.GetSelectedSensorPosition());
     if(controller.GetXButtonPressed()){
-        IntakeUpDown.Set(TalonFXControlMode::Position, intakeDefaultState - intakeBoolState*(2048.0/30.0)*mathConst::intakeGearRatio);
-        intakeBoolState = !intakeBoolState;
+        pos = IntakeUpDown.GetSelectedSensorPosition() + 10000;
     }
+    else if (controller.GetYButtonPressed()){
+        pos = IntakeUpDown.GetSelectedSensorPosition() - 10000;
+    }
+    frc::SmartDashboard::PutNumber("percentage intake", (pos-IntakeUpDown.GetSelectedSensorPosition())/20000);
+    IntakeUpDown.Set(TalonFXControlMode::PercentOutput, (pos-IntakeUpDown.GetSelectedSensorPosition())/20000);
 
     frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
 
@@ -486,6 +517,16 @@ void Robot::TeleopPeriodic()
     else {
         ShooterTop.Set(ControlMode::PercentOutput, 0);
         ShooterBottom.Set(ControlMode::PercentOutput, 0);
+    }
+
+    if (controllerAux.GetLeftBumper()){
+        ArmMotor.Set(ControlMode::PercentOutput, -0.2);
+    }
+    else if (controllerAux.GetRightBumper()){
+        ArmMotor.Set(ControlMode::PercentOutput, 0.2);
+    }
+    else {
+        ArmMotor.Set(ControlMode::PercentOutput, 0);
     }
     
 // when controller joysticks have no input, fla is 1000.0 (pseudo exit code)
