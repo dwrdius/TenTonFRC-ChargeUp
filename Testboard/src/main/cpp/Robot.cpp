@@ -31,14 +31,14 @@ frc::XboxController ControllerAux{1};
 
 TalonFX falcon{1};
 
-rev::CANSparkMax IntakeMaster{13, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
-rev::CANSparkMax IntakeSlave{14, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+// rev::CANSparkMax IntakeMaster{13, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+// rev::CANSparkMax IntakeSlave{14, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 
 // Gyro
 AHRS navX{frc::SPI::kMXP};
 
 // LED
-frc::PWMSparkMax LED{1};
+// frc::PWMSparkMax LED{1};
 
 // Colour Sensor
 rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
@@ -55,28 +55,41 @@ double dead(double x)
   return x/2;
 }
 
+double x;
+
 class Robot : public frc::TimedRobot {
  public:
   void TeleopInit() override {
-    IntakeMaster.RestoreFactoryDefaults();
-    IntakeSlave.RestoreFactoryDefaults();
-    IntakeSlave.Follow(IntakeMaster, true);
+    // IntakeMaster.RestoreFactoryDefaults();
+    // IntakeSlave.RestoreFactoryDefaults();
+    // IntakeSlave.Follow(IntakeMaster, true);
+    falcon.ConfigPeakOutputForward(0.2);
+    falcon.SetSelectedSensorPosition(0);
+    falcon.SetNeutralMode(NeutralMode::Brake);
   }
   void TeleopPeriodic() override {
-    if(controller.GetAButton())
+    if(controller.GetAButtonPressed())
     {
-      IntakeMaster.Set(0.2);
+      // IntakeMaster.Set(0.2);
+      falcon.Set(TalonFXControlMode::Position, 3000);
     }
     else if (controller.GetBButton())
     {
-      IntakeMaster.Set(-0.2);
+      // IntakeMaster.Set(-0.2);
+      x = falcon.GetSelectedSensorPosition();
+      falcon.Set(TalonFXControlMode::PercentOutput, (30000-x)/20000);
     }
-    else
+    else if (controller.GetXButtonPressed())
     {
-      IntakeMaster.Set(0);
+      falcon.Set(TalonFXControlMode::Position, 0);
     }
-    frc::SmartDashboard::PutNumber("A", controller.GetAButton());
-    frc::SmartDashboard::PutNumber("B", controller.GetBButton());
+    // else
+    // {
+    //   // IntakeMaster.Set(0);
+    // }
+    frc::SmartDashboard::PutNumber("percent", (30000-x)/20000);
+    frc::SmartDashboard::PutNumber("position", falcon.GetSelectedSensorPosition());
+    frc::SmartDashboard::PutNumber("dklfjsd", navX.GetYaw());
   }
 };
 

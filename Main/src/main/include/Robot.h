@@ -54,6 +54,9 @@
 // Neo
 #include <rev/CANSparkMax.h>
 
+// current limiting
+#include <ctre/phoenix/motorcontrol/SupplyCurrentLimitConfiguration.h>
+
 class Robot : public frc::TimedRobot {
     public:
         void RobotInit() override;
