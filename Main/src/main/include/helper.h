@@ -80,6 +80,9 @@ double slew(double currentPercentage, double desiredPercentage, int mode)
             break;
         case 1:
             slewRate = Slews::LLSlew;
+            break;
+        case 2:
+            slewRate = 0.1;
     }
     if (abs(diff)>=slewRate)
     {
@@ -116,6 +119,12 @@ double deadband(double input, int mode)
                 input=0;
             }
             break;
+        case 3:
+            if (abs(input) <= 1)
+            {
+                input=0;
+            }
+            break;
     }
     return input;
 }
@@ -134,7 +143,7 @@ void setDesiredState(TalonFX& m_swerve, TalonFX& m_drive, double *swerveState, d
 {
     // convert desired angle to optimal turn angle and divide by 90 degrees to convert to percentage
             // limit motor turn speed
-    *swerveState = deadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn), 0), 2);
+    *swerveState = deadband(slew(*swerveState, swerveCalcs(CANCoder, desiredTurn), 2), 2);
     m_swerve.Set(TalonFXControlMode::PercentOutput, *swerveState);
 
     // Controls whether the wheels go forwards or backwards depending on the ideal turn angle
@@ -185,9 +194,26 @@ double aprilAlign (double NavX)
 // btw everything breaks with an asymmetrical base
 void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
 {
-    mathConst::rotationVectorMultiplier = ((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator;
+    mathConst::rotationVectorMultiplier = deadband(((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator, 0);
 }
 
+// 0: mag^exp, 1: (mag^2 + mag^10)/2
+double exponentiate (double magnitude, int type)
+{
+    switch (type)
+    {
+        case 0:
+            magnitude = pow(magnitude, mathConst::driveExponent);
+            break;
+        case 1:
+            magnitude = (pow(magnitude, 2) + pow(magnitude, 10)) / 2;
+            break;
+        case 2:
+            magnitude = (pow(magnitude, 2) + pow(magnitude, 5)) / 2;
+            break;
+    }
+    return magnitude;
+}
 
 
 #endif

@@ -4,9 +4,9 @@
 #include <cmath>
 namespace autonomous {
     double kAutoCommandList[][3]={
-        {0, 130, 0}
+        {0, 72, 0},
         // ...
-        // {0, 0, 0}
+        {0, 78, 0}
     }; 
 }
 #endif

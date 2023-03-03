@@ -54,18 +54,19 @@ namespace RevIDs {
 }
 
 namespace mathConst {
-    const double speedLimit = 0.2;             // limit motor speed output   0 < x <= 1
+    const double speedLimit = 0.9;             // limit motor speed output   0 < x <= 1
     double variableSpeedLimit;
     const double driveExponent = 7;
 
     // rotation:translation ratio
-    double rotationVectorMultiplier = 0.1; 
+    double rotationVectorMultiplier = 0.2; 
 
     // const double baseWidth = 15.5;             // inches
     // const double baseLength = 25.0;
 
     // speed of swivel
-    const double swerveMotorSpeed = 0.5;
+    const double swerveMotorSpeed = 0.4
+    ;
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
     double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
@@ -89,7 +90,7 @@ namespace Deadbands {
 }
 
 namespace Slews {
-    const double driveSlew = 0.03;
+    const double driveSlew = 0.05;
     const double LLSlew = 0.02;
 }
 
