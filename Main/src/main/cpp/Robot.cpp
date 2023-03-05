@@ -48,10 +48,6 @@ frc::PWMSparkMax LED{RevIDs::kLED};
 // Colour Sensor
 rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
 
-double peakoutcurr = 0;
-double peakstatcurr = 0;
-double peaksuppcurr = 0;
-
 int autostop;
 
 // true = going down; false = going up
@@ -59,7 +55,7 @@ bool intakeState = true;
 double intakePos; 
 double intakePercentage;
 
-// true = auto; false = manual
+// true = set position; 0 = manual
 int armState = 0;
 double armPos;
 double armPercentage;
@@ -71,8 +67,6 @@ auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
 double tx;
 double ty;
 std::vector<double> aprilPos;
-
-int pipeline = 1;
 
 double angleToGoalDegrees;
 double distanceFromLimelightToGoalInches;
@@ -101,10 +95,6 @@ double FRDriveState;
 double BLDriveState;
 double BRDriveState;
 
-// debugging rotational rpm
-double initAngle;
-double degreesofRotation;
-
 // auto
 double diffX;
 double diffY;
@@ -115,8 +105,6 @@ int autoIndex = 0;
 
 bool balance = true;
 bool onChargingStation = false;
-bool LEDStrobe = true;
-
 
 // colour
 rev::ColorMatch m_colorMatcher;
@@ -149,10 +137,27 @@ frc::Pose2d currentPose{0_in, 0_in, 0_deg};
 // Automatically applies deadbands
 // Outputs a swerveModule object 
 // (percentage speeds and angles in the order FL, FR, BL, BR)
-desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double gyro, bool exponentialTrue)
+desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, double gyro, bool applyExponentTrue)
 {
     // cmath reads radians; applies deadbands
     gyro = getRadian(gyro);
+    
+    Point posVector = Point(0.0, 0.0);
+    
+    double joystickMagnitude=1;
+    if (ArmMotor.GetSelectedSensorPosition())
+    {
+        joystickMagnitude = fmin(1, -20000/ArmMotor.GetSelectedSensorPosition());
+    }
+    
+    double exponentialModification = magnitude(xLeft, yLeft);
+    
+    if (applyExponentTrue)
+    {
+        exponentialModification = exponentiate(exponentialModification, mathConst::ThrottleMode);
+    } 
+
+    joystickMagnitude = joystickMagnitude*exponentialModification;
     
     // Creates a unit vector multiplied by right joystick input and proportionally scaled by "rotationVectorMultiplier"
     double rotationScalar=0;
@@ -160,25 +165,10 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
     {
         rotationScalar = pow(xRight, 2)*xRight/abs(xRight);
     }
-    double joystickMagnitude=1;
-    Point posVector = Point(0.0, 0.0);
-    if (ArmMotor.GetSelectedSensorPosition())
-    {
-        joystickMagnitude = fmin(1, -20000/ArmMotor.GetSelectedSensorPosition());
-    }
-    double exponentialModification = magnitude(xLeft, yLeft);
-    if (exponentialTrue)
-    {
-        exponentialModification = exponentiate(exponentialModification, 2);
-    } 
-    // (pow(magnitude(xLeft, yLeft), 10) + pow(magnitude(xLeft, yLeft), 2)) / 2;
-    // double exponentialModification = pow(magnitude(xLeft, yLeft), mathConst::driveExponent);
-    joystickMagnitude = joystickMagnitude*exponentialModification;
     if (joystickMagnitude)  // Check if left joystick has an input
     {
         // atan2 converts joystick input into angle
         // + gyro makes desired angle calculation field relative 
-        // (was -gyro in math but +gyro works in practice?)
         double fieldRelativePosAngle = atan2(xLeft, yLeft) + gyro;
         
         // convert angles back into Cartesian
@@ -186,7 +176,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
         posVector.y = joystickMagnitude * cos(fieldRelativePosAngle);
         rotationScalar = mathConst::rotationVectorMultiplier * rotationScalar; 
     }
-    else if (abs(xRight) < 0.1) // the < 0.1 is another reduncancy that is within the deadband
+    else if (!xRight) // the < 0.1 is another reduncancy that is within the deadband
     {
         // if no joystick input, return exit code
         return desiredSwerveModule(0.0, 1000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -206,6 +196,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
     double magnitudes[4] = {magnitude(rawFL.x, rawFL.y), magnitude(rawFR.x, rawFR.y), magnitude(rawBL.x, rawBL.y), magnitude(rawBR.x, rawBR.y)};
     double limitingScalar = findMax(magnitudes, sizeof(magnitudes) / sizeof(magnitudes[0]));
     
+    // pure turning
     if(!exponentialModification)
     {
         limitingScalar = limitingScalar * 5;
@@ -257,7 +248,7 @@ frc::SwerveDriveOdometry<4> odometry{
 void moveToCoord()
 { 
     diffX = -(autonomous::kAutoCommandList[autoIndex][0] + currentPose.Y().value()*39.37);
-    diffY = autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value()*39.37;
+    diffY = (autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value()*39.37);
     diffAngle = fmod(autonomous::kAutoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
     translationAngle = atan2(diffX, diffY);
 
@@ -428,11 +419,6 @@ void Robot::AutonomousPeriodic()
             roll = 1;
         }
         autoDesiredStates = swerveKinematics(0, roll, 0, navX.GetYaw(), false);
-        if (!roll)
-        {
-            mathConst::rotationVectorMultiplier = 0.2;
-            autoDesiredStates = swerveKinematics(0, 0, fmod((-navX.GetYaw()), 360.0)/60, 0, false);
-        }
     }
     else {
         autostop++;
@@ -505,12 +491,6 @@ void Robot::TeleopPeriodic()
     // .flm is "Front left magnitude" (percentage)
     // .fla is "Front left angle" (degrees)
     // fl[], fr[], bl[], br[]
-    // peakoutcurr = fmax(ArmMotor.GetOutputCurrent(), peakoutcurr);
-    // peakstatcurr = fmax(ArmMotor.GetStatorCurrent(), peakstatcurr);
-    // peaksuppcurr = fmax(ArmMotor.GetSupplyCurrent(), peaksuppcurr);
-    // frc::SmartDashboard::PutNumber("out current", peakoutcurr);
-    // frc::SmartDashboard::PutNumber("stat current", peakstatcurr);
-    // frc::SmartDashboard::PutNumber("supp current", peaksuppcurr);
     
     std::shared_ptr<nt::NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     tx = table -> GetNumber("tx", 0.0);
@@ -522,8 +502,6 @@ void Robot::TeleopPeriodic()
     // distanceFromLimelightToGoalInches = heightToGoal/tan(getRadian(angleToGoalDegrees));
 
     // frc::SmartDashboard::PutNumber("Limelight Distance", LimelightDifference);
-
-    
 
     if (controller.GetRightBumper()) {
         //Retroreflective Tape Tracking
@@ -564,15 +542,6 @@ void Robot::TeleopPeriodic()
         // LimelightSlew = slew(LimelightSlew, LimelightDifference, 1);
         // frc::SmartDashboard::PutNumber("LimelightDifference", LimelightSlew);
         // moduleDesiredStates = swerveKinematics(-deadband(desiredRotation-fmod(navX.GetYaw()+1080.0, 360.0), 2)/20, 0, 0, navX.GetYaw(), false);
-
-        if (!deadband(-ty/50, 0))
-        {
-            LED.Set(-0.69);
-        }
-        else
-        {
-            LED.Set(0.99);
-        }
     }
     else if (controllerAux.GetAButton())
     {
@@ -582,7 +551,7 @@ void Robot::TeleopPeriodic()
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle(), true);
     }
-    // //Intake's intake mechanism
+    // intake mechanism
     if(controller.GetRightTriggerAxis())
     {
       IntakeLeader.Set(0.5);
@@ -606,6 +575,7 @@ void Robot::TeleopPeriodic()
     {
         ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
         armState = 0;
+        armPos = ArmMotor.GetSelectedSensorPosition();
     }
     else if (armState)
     {
@@ -619,7 +589,7 @@ void Robot::TeleopPeriodic()
         }
         armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
         ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
-        if(ArmMotor.GetSelectedSensorVelocity()==0)
+        if(!ArmMotor.GetSelectedSensorVelocity())
         {
             armState = 0;
         }
@@ -660,7 +630,6 @@ void Robot::TeleopPeriodic()
         intakeState = true;
     }
         
-    // }
     if (IntakeUpDown.GetOutputCurrent()>30)
     {
         intakePercentage = 0;
@@ -676,8 +645,6 @@ void Robot::TeleopPeriodic()
 
     frc::SmartDashboard::PutNumber("percentage intake", intakePercentage);
     IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
-
-    // frc::SmartDashboard::PutNumber("Dist", distanceFromLimelightToGoalInches);
 
     if (controllerAux.GetXButton()){
         ShooterTop.Set(ControlMode::PercentOutput, -0.2);
@@ -732,20 +699,19 @@ void Robot::TeleopPeriodic()
     {
         navX.ZeroYaw();
         navX.SetAngleAdjustment(controller.GetPOV());
-        
     }
     
     if (controller.GetPOV()!=-1)
     {
-        LED.Set(0.3);
+        LED.Set(0.3); // yellow
     }
-    else if (abs(ty)<=2 && ty != 0)
+    else if (abs(ty)<=2 && ty != 0 && !FLDriveMotor.GetSelectedSensorVelocity())
     {
-        LED.Set(-0.69);
+        LED.Set(-0.69); // rainbow
     }
     else
     {
-        LED.Set(0.99);
+        LED.Set(0.99); // black
     }
 
     if(controller.GetLeftTriggerAxis())

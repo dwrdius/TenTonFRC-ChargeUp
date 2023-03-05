@@ -197,19 +197,60 @@ void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
     mathConst::rotationVectorMultiplier = deadband(((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator, 0);
 }
 
-// 0: mag^exp, 1: (mag^2 + mag^10)/2
+// 0: x^2.5 --> purple
+// 1: (x^2 + x^10) / 2 --> blue
+// 2: (x^2 + x^5) / 2 --> green
+// 3: exp + cubic (high plateau) --> dotted red
+// 4: exp + cubic (mid plateau) --> dotted orange
+// 5: sigmoid + cubic --> dotted green 
 double exponentiate (double magnitude, int type)
 {
+    if (abs(type)>=1)
+    {
+        return type/abs(type);
+    }
     switch (type)
     {
         case 0:
-            magnitude = pow(magnitude, mathConst::driveExponent);
+            magnitude = pow(magnitude, 2.5);
             break;
         case 1:
             magnitude = (pow(magnitude, 2) + pow(magnitude, 10)) / 2;
             break;
         case 2:
             magnitude = (pow(magnitude, 2) + pow(magnitude, 5)) / 2;
+            break;
+        case 3:
+            if (magnitude<0.3894)
+            {
+                magnitude = 31*pow(magnitude, 4.75) - 3.74*pow(10, 15) * pow(magnitude, 52.5);
+            }
+            else
+            {
+                magnitude = 15.81 * magnitude - 23.28*pow(magnitude, 2) + 11.43*pow(magnitude, 3) - 2.95;
+            }
+            break;
+        case 4:
+            if (magnitude<0.2272)
+            {
+                magnitude = (pow(M_E, 4*(magnitude-0.0065))-1) / 6;
+            }
+            else
+            {
+                magnitude = 4.98283*x - 9.08987*pow(x, 2) + 5.6091*pow(x, 3) - 0.492389;
+            }
+            break;
+        case 5:
+            if (abs(magnitude)<0.5183)
+            {
+                magnitude = 1 / (2.3 * (1 + pow(M_E, 20*(0.3-magnitude))));
+            }
+            else
+            {
+                magnitude = 4.98283*x - 9.08987*pow(x, 2) + 5.6091*pow(x, 3) - 0.492389;
+            }
+            break;
+        case 6:
             break;
     }
     return magnitude;
