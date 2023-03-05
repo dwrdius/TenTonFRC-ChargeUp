@@ -1,0 +1,21 @@
+Autonomous balancing is working
+Shooting is untested
+
+Shooter is calibrated for middle goals
+Shooter is 30% consistent for high goals
+
+Cube is not integrated
+
+Absolute arm limit implemented for safety
+Arm top slowdown not yet implemented
+
+Current limiting is temporary and does not actually prevent harmful commands from drivers*
+
+Gyro zeroing seems to be fixed???? ~ still inconsistent
+
+New joystick curves in progress
+
+Intake is still manual
+
+Limelight alignment works on a horizontal translation
+*angular relies on driver zero* (A button on aux aligns to calibrated gyro zero)
