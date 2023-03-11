@@ -20,6 +20,8 @@
 
 #include <frc/controller/PIDController.h>
 
+#include <frc/DigitalInput.h>
+
 namespace ControllerIDs {
     //USB port addresses on drivestation PC.
     constexpr int kControllerMainID = 0;
@@ -116,5 +118,7 @@ extern rev::ColorSensorV3 m_colorSensor;
 // PIDs
 extern frc2::PIDController autoCoordPID;
 extern frc2::PIDController alignAnglePID;
+
+extern frc::DigitalInput armLimitSwitch;
 
 #endif

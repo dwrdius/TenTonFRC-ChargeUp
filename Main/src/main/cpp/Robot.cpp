@@ -583,6 +583,11 @@ void Robot::TeleopPeriodic()
     frc::SmartDashboard::PutNumber("arm position", armPos);
     frc::SmartDashboard::PutNumber("arm sensor pos", ArmMotor.GetSelectedSensorPosition());
     
+    if (armLimitSwitch.Get())
+    {
+        armState = 0;
+        armPos = ArmMotor.GetSelectedSensorPosition();
+    }
     if (ArmMotor.GetOutputCurrent()>35)
     {
         ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
@@ -630,7 +635,7 @@ void Robot::TeleopPeriodic()
     }
     else
     {
-        if (controllerAux.GetLeftBumper()){
+        if (controllerAux.GetLeftBumper() && !armLimitSwitch.Get()){
             ArmMotor.Set(ControlMode::PercentOutput, fmin(0.3, -0.3*ArmMotor.GetSelectedSensorPosition()/8000));
         }
         else if (controllerAux.GetRightBumper()){

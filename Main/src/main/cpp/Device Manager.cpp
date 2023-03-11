@@ -49,3 +49,6 @@ rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
 // PIDs
 frc2::PIDController autoCoordPID{0, 0, 0};
 frc2::PIDController alignAnglePID{0, 0, 0};
+
+// Limit switches
+frc::DigitalInput armLimitSwitch{0};
