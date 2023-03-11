@@ -197,12 +197,15 @@ void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
     mathConst::rotationVectorMultiplier = deadband(((dAngle) / lDisplacement) / mathConst::kDegreesPerInchDenominator, 0);
 }
 
+// https://www.desmos.com/calculator/smj51ntx4w
 // 0: x^2.5 --> purple
 // 1: (x^2 + x^10) / 2 --> blue
 // 2: (x^2 + x^5) / 2 --> green
 // 3: exp + cubic (high plateau) --> dotted red
 // 4: exp + cubic (mid plateau) --> dotted orange
 // 5: sigmoid + cubic --> dotted green 
+
+// 6: See Desmos --> https://www.desmos.com/calculator/dw8xhxmm6k
 double exponentiate (double magnitude, int type)
 {
     if (abs(type)>=1)
@@ -237,7 +240,7 @@ double exponentiate (double magnitude, int type)
             }
             else
             {
-                magnitude = 4.98283*x - 9.08987*pow(x, 2) + 5.6091*pow(x, 3) - 0.492389;
+                magnitude = 4.98283*magnitude - 9.08987*pow(magnitude, 2) + 5.6091*pow(magnitude, 3) - 0.492389;
             }
             break;
         case 5:
@@ -247,10 +250,22 @@ double exponentiate (double magnitude, int type)
             }
             else
             {
-                magnitude = 4.98283*x - 9.08987*pow(x, 2) + 5.6091*pow(x, 3) - 0.492389;
+                magnitude = 4.98283*magnitude - 9.08987*pow(magnitude, 2) + 5.6091*pow(magnitude, 3) - 0.492389;
             }
             break;
         case 6:
+            if (abs(magnitude) < Exponentiation::nexus)
+            { 
+                magnitude = Exponentiation::arb_a / (1 + pow(M_E, Exponentiation::arb_b * (Exponentiation::arb_c - magnitude))) + Exponentiation::arb_d;
+            }
+            else
+            {
+                magnitude = Exponentiation::arb_e * pow(M_E, Exponentiation::arb_f * (magnitude - Exponentiation::arb_g)) + Exponentiation::arb_h + (Exponentiation::arb_a / (1 + pow(M_E, Exponentiation::arb_b * (Exponentiation::arb_c - Exponentiation::nexus))) + Exponentiation::arb_d) - (Exponentiation::arb_e * pow(M_E, Exponentiation::arb_f * (Exponentiation::nexus - Exponentiation::arb_g)) + Exponentiation::arb_h);
+            }
+            if (magnitude>1)
+            {
+                magnitude = 1;
+            }
             break;
     }
     return magnitude;

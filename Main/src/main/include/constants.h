@@ -6,56 +6,8 @@
 #include <frc/geometry/Translation2d.h>
 #include <frc/util/Color.h>
 
-namespace ControllerIDs {
-    //USB port addresses on drivestation PC.
-    constexpr int kControllerMainID = 0;
-    constexpr int kControllerAuxID = 1;
-}
-
-namespace CanIDs {
-    // Drive Motors
-    const int kFLDriveMotor = 3;
-    const int kFRDriveMotor = 1;
-    const int kBLDriveMotor = 2;
-    const int kBRDriveMotor = 4;
-
-    // Swerve Motors
-    const int kFLSwerveMotor = 7;
-    const int kFRSwerveMotor = 5;
-    const int kBLSwerveMotor = 6;
-    const int kBRSwerveMotor = 8;
-
-    // Encoders
-    const int kFLCANCoder = 11;
-    const int kFRCANCoder = 9;
-    const int kBLCANCoder = 10;
-    const int kBRCANCoder = 12;
-
-    // CANCAN CANivore    
-    //Intake Talon
-    const int kIntakeUpDown = 1;
-
-    //Arm talons
-    const int kArmMotor = 2;
-    const int kShooterBottom = 3;
-    const int kShooterTop = 4;
-
-}
-
-namespace RevIDs {
-// TEMP IDs -------------------------------------------------------------------------------------------------------------------------
-
-    // Intake Motors Neo
-    const int kIntakeLeader = 14;
-    const int kIntakeFollower = 13;
-
-    // LED
-    const int kLED = 1;    
-}
-
 namespace mathConst {
     const double speedLimit = 0.9;             // limit motor speed output   0 < x <= 1
-    double variableSpeedLimit;
 
     const double ThrottleMode = 2;
 
@@ -66,8 +18,7 @@ namespace mathConst {
     // const double baseLength = 25.0;
 
     // speed of swivel
-    const double swerveMotorSpeed = 0.4
-    ;
+    const double swerveMotorSpeed = 0.4;
 
     // relative coordinate of centre of wheels to the centre of the robot [FL, FR, BL, FR]
     double xCoords[4] = {-7.75, 7.75, -7.75, 7.75};
@@ -124,6 +75,19 @@ namespace Odometry {
     const frc::Translation2d kFRLocation{12.5_in, -7.75_in};
     const frc::Translation2d kBLLocation{-12.5_in, 7.75_in};
     const frc::Translation2d kBRLocation{-12.5_in, -7.75_in};
+}
+
+namespace Exponentiation {
+    const double nexus = 1;
+    
+    const double arb_a = 1;
+    const double arb_b = 1;
+    const double arb_c = 1;
+    const double arb_d = 1;
+    const double arb_e = 1;
+    const double arb_f = 1;
+    const double arb_g = 1;
+    const double arb_h = 1;
 }
 
 #endif
