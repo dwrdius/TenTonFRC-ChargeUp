@@ -204,7 +204,7 @@ void moveToCoord()
 { 
     diffX = -(autonomous::kAutoCommandList[autoIndex][0] + currentPose.Y().value()*39.37);
     diffY = -(autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value()*39.37);
-    diffAngle = fmod(autonomous::kAutoCommandList[autoIndex][2] - navX.GetYaw(), 360.0);
+    diffAngle = fmod(autonomous::kAutoCommandList[autoIndex][2] - navX.GetAngle(), 360.0);
     translationAngle = atan2(diffX, diffY);
 
     if (diffAngle > 180.0)
@@ -231,7 +231,7 @@ void moveToCoord()
     }
     else
     {
-        autoDesiredStates = TeleOpSwerve(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw(), false);
+        autoDesiredStates = TeleOpSwerve(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetAngle(), false);
     }
     // frc::SmartDashboard::PutNumber("auto x", linearDisplacement*sin(translationAngle));
     // frc::SmartDashboard::PutNumber("auto y", linearDisplacement*cos(translationAngle));
@@ -258,7 +258,7 @@ void moveToPosition(double x, double y, double angle)
 
     linearDisplacement = autoCoordPID.Calculate(linearDisplacement, deadband(magnitude(diffX, diffY), 1));
     autoRotationScalarFromCoords(diffAngle, magnitude(diffX, diffY));
-    autoDesiredStates = TeleOpSwerve(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetYaw(), false);
+    autoDesiredStates = TeleOpSwerve(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetAngle(), false);
 }
 
 void Robot::RobotInit() 
@@ -398,7 +398,7 @@ void Robot::AutonomousPeriodic()
         else{
             roll = 1;
         }
-        autoDesiredStates = TeleOpSwerve(0, roll, 0, navX.GetYaw(), false);
+        autoDesiredStates = TeleOpSwerve(0, roll, 0, navX.GetAngle(), false);
     }
     else {
         autostop++;
