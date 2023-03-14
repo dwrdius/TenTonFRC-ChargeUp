@@ -302,7 +302,7 @@ void Robot::RobotInit()
     ArmMotor.ConfigPeakOutputForward(0.3);
     ShooterTop.ConfigPeakOutputForward(1);
     ShooterBottom.ConfigPeakOutputForward(1);
-    IntakeUpDown.ConfigPeakOutputForward(0.2);
+    IntakeUpDown.ConfigPeakOutputForward(0.15);
 
     IntakeUpDown.SetSelectedSensorPosition(0);
     ArmMotor.SetSelectedSensorPosition(0);
@@ -327,6 +327,8 @@ void Robot::RobotPeriodic()
     // frc::SmartDashboard::PutString("Detected Color", colorstring);
     // uint32_t proximity = m_colorSensor.GetProximity();
     // frc::SmartDashboard::PutNumber("Proximity", proximity);
+
+    frc::SmartDashboard::PutBoolean("Arm Limit", armLimitSwitch.Get());
 }
 
 void Robot::AutonomousInit() 
@@ -583,7 +585,7 @@ void Robot::TeleopPeriodic()
     frc::SmartDashboard::PutNumber("arm position", armPos);
     frc::SmartDashboard::PutNumber("arm sensor pos", ArmMotor.GetSelectedSensorPosition());
     
-    if (armLimitSwitch.Get())
+    if (!armLimitSwitch.Get())
     {
         armState = 0;
         armPos = ArmMotor.GetSelectedSensorPosition();
@@ -635,7 +637,7 @@ void Robot::TeleopPeriodic()
     }
     else
     {
-        if (controllerAux.GetLeftBumper() && !armLimitSwitch.Get()){
+        if (controllerAux.GetLeftBumper() && armLimitSwitch.Get()){
             ArmMotor.Set(ControlMode::PercentOutput, fmin(0.3, -0.3*ArmMotor.GetSelectedSensorPosition()/8000));
         }
         else if (controllerAux.GetRightBumper()){
@@ -732,7 +734,7 @@ void Robot::TeleopPeriodic()
             intakeActive = true;
         }
         else if (controller.GetXButtonPressed()){
-            intakePos = 29000;
+            intakePos = 22000;
             IntakeUp = true;
             intakeActive = true;
         }
@@ -796,7 +798,7 @@ void Robot::TeleopPeriodic()
     
     if (controller.GetLeftBumper())
     {
-        LED.Set(0.73); //Lime
+        LED.Set(0.73); // lime
     }
     else if (controller.GetPOV()!=-1)
     {
