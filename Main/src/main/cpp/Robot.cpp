@@ -765,8 +765,6 @@ void Robot::TeleopPeriodic()
         desiredTurnBR = moduleDesiredStates.bra;
     }
 
-    if(magnitude(navX.GetVelocityX(), navX.GetVelocityY())>4)
-
     setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, moduleDesiredStates.flm, moduleDesiredStates.fla);
     setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, moduleDesiredStates.frm, moduleDesiredStates.fra);
     setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, moduleDesiredStates.blm, moduleDesiredStates.bla);
@@ -796,11 +794,15 @@ void Robot::TeleopPeriodic()
         navX.SetAngleAdjustment(controller.GetPOV());
     }
     
-    if (controller.GetPOV()!=-1)
+    if (controller.GetLeftBumper())
+    {
+        LED.Set(0.73); //Lime
+    }
+    else if (controller.GetPOV()!=-1)
     {
         LED.Set(0.3); // yellow
     }
-    else if (abs(ty)<=2 && ty != 0 && !FLDriveMotor.GetSelectedSensorVelocity())
+    else if (abs(ty)<=1 && ty != 0 && !FLDriveMotor.GetSelectedSensorVelocity())
     {
         LED.Set(-0.69); // rainbow
     }
