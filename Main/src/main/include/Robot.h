@@ -57,6 +57,9 @@
 // current limiting
 #include <ctre/phoenix/motorcontrol/SupplyCurrentLimitConfiguration.h>
 
+// Limit Switches
+#include <frc/DigitalInput.h>
+
 class Robot : public frc::TimedRobot {
     public:
         void RobotInit() override;

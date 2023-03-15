@@ -1,3 +1,6 @@
+#ifndef MODULECONFIGS_H
+#define MODULECONFIGS_H
+
 void setTalonSoftLimit(TalonFX& motor, int forwardLimit, int reverseLimit, int gearRatio)
 {
     motor.ConfigForwardSoftLimitThreshold(forwardLimit * 2048/360 * gearRatio, 0);
@@ -22,3 +25,5 @@ void limitSpeeds (TalonFX& motor, double speed)
     motor.ConfigPeakOutputForward(speed);
     motor.ConfigPeakOutputReverse(-speed);
 }
+
+#endif

@@ -125,4 +125,17 @@ namespace Odometry {
     const frc::Translation2d kBRLocation{-12.5_in, -7.75_in};
 }
 
+namespace Exponentiation {
+    const double nexus = 0.587;
+    
+    const double arb_a = 0.458618;
+    const double arb_b = 18.7947;
+    const double arb_c = 0.35067;
+    const double arb_d = -0.000669604;
+    const double arb_e = 0.11044;
+    const double arb_f = 8.20047;
+    const double arb_g = 0.797399;
+    const double arb_h = 0.418337;
+}
+
 #endif
