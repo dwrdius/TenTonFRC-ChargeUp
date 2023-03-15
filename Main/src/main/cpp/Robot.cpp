@@ -412,6 +412,28 @@ void Robot::AutonomousPeriodic()
     frc::SmartDashboard::PutNumber("X ", currentPose.X().value()*39.37);
     frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value()*39.37);
 
+    // if(balance){
+    //     double roll = deadband(navX.GetRoll(), 3);
+    //     if (abs(roll)>8)
+    //     {
+    //         onChargingStation = true;
+    //         limitSpeeds(FLDriveMotor, 0.3);
+    //         limitSpeeds(FLSwerveMotor, 0.3);
+    //         limitSpeeds(FRDriveMotor, 0.3);
+    //         limitSpeeds(FRSwerveMotor, 0.3);
+    //         limitSpeeds(BLDriveMotor, 0.3);
+    //         limitSpeeds(BLSwerveMotor, 0.3);
+    //         limitSpeeds(BRDriveMotor, 0.3);
+    //         limitSpeeds(BRSwerveMotor, 0.3);
+    //     }
+    //     if (onChargingStation && abs(roll) < 6)
+    //     {
+    //         roll = fmax(-roll / 120, -roll/abs(roll)*0.02); // 0.02 is minimum move speed for balance
+    //     }
+    //     else{
+    //         roll = 1;
+    //     }
+
     if(balance){
         double roll = deadband(navX.GetRoll(), 3);
         if (abs(roll)>8)
