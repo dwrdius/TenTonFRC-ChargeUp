@@ -54,12 +54,10 @@ namespace RevIDs {
 }
 
 namespace mathConst {
-    const double speedLimit = 0.9;             // limit motor speed output   0 < x <= 1
-    double variableSpeedLimit;
-    const double driveExponent = 7;
-
+    const double speedLimit = 0.3;             // limit motor speed output   0 < x <= 1
+   
     // rotation:translation ratio
-    double rotationVectorMultiplier = 0.2; 
+    double rotationVectorMultiplier = 0.4; 
 
     // const double baseWidth = 15.5;             // inches
     // const double baseLength = 25.0;
