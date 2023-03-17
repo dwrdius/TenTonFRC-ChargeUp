@@ -131,6 +131,12 @@ double deadband(double input, int mode)
                 input=0;
             }
             break;
+        case 5:
+            if (abs(input) <= 0.2)
+            {
+                input=0;
+            }
+            break;
     }
     return input;
 }

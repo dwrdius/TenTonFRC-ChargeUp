@@ -76,7 +76,7 @@ double tx;
 double ty;
 std::vector<double> aprilPos;
 
-int pipeline = 1;
+double LLAlignTranslation;
 
 double angleToGoalDegrees;
 double distanceFromLimelightToGoalInches;
@@ -536,7 +536,19 @@ void Robot::TeleopPeriodic()
     frc::SmartDashboard::PutNumber("ty", ty);
     
     if (controller.GetRightBumper()) {
-        moduleDesiredStates = swerveKinematics(-deadband(ty+0.65, 0)/50, 0, 0, navX.GetAngle(), false);
+        if (deadband(ty, 5) < 0)
+        {
+            LLAlignTranslation = -deadband(ty+0.3, 5)/50;
+        }
+        else if (deadband(ty, 5))
+        {
+            LLAlignTranslation = -deadband(ty-0.3, 5)/50;
+        }
+        else
+        {
+            LLAlignTranslation = 0;
+        }
+        moduleDesiredStates = swerveKinematics(LLAlignTranslation, 0, 0, navX.GetAngle(), false);
     }
     // else if (controllerAux.GetAButton())
     // {
@@ -686,7 +698,7 @@ void Robot::TeleopPeriodic()
                 }
                 else
                 {
-                    intakePos = 1700;
+                    intakePos = 2000;
                     intakeActive = true;
                     intakeStage = 1;
                 }
@@ -763,7 +775,7 @@ void Robot::TeleopPeriodic()
     IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
 
     if(controller.GetYButtonPressed()){ // up
-        intakePos = 1700;
+        intakePos = 2000;
         intakeActive = true;
     }
     else if (controller.GetXButtonPressed()){ // down
