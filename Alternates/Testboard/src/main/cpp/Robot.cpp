@@ -29,10 +29,10 @@
 frc::XboxController controller{0};
 frc::XboxController ControllerAux{1};
 
-TalonFX falcon{1};
+// TalonFX falcon{1};
 
-// rev::CANSparkMax IntakeMaster{13, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
-// rev::CANSparkMax IntakeSlave{14, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+rev::CANSparkMax IntakeMaster{13, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
+rev::CANSparkMax IntakeSlave{14, rev::CANSparkMaxLowLevel::MotorType::kBrushless};
 
 // Gyro
 AHRS navX{frc::SPI::kMXP};
@@ -41,10 +41,10 @@ AHRS navX{frc::SPI::kMXP};
 // frc::PWMSparkMax LED{1};
 
 // Colour Sensor
-rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
+// rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
 
-static const frc::Color KYellowTarget = frc::Color(0.4, 0.45, 0.1);
-static const frc::Color KPurpleTarget = frc::Color(0.27, 0.4, 0.2);
+// static const frc::Color KYellowTarget = frc::Color(0.4, 0.45, 0.1);
+// static const frc::Color KPurpleTarget = frc::Color(0.27, 0.4, 0.2);
 
 double dead(double x)
 {
@@ -60,36 +60,34 @@ double x;
 class Robot : public frc::TimedRobot {
  public:
   void TeleopInit() override {
-    // IntakeMaster.RestoreFactoryDefaults();
-    // IntakeSlave.RestoreFactoryDefaults();
-    // IntakeSlave.Follow(IntakeMaster, true);
-    falcon.ConfigPeakOutputForward(0.2);
-    falcon.SetSelectedSensorPosition(0);
-    falcon.SetNeutralMode(NeutralMode::Brake);
+    IntakeMaster.RestoreFactoryDefaults();
+    IntakeSlave.RestoreFactoryDefaults();
+    IntakeSlave.Follow(IntakeMaster, true);
+    // falcon.ConfigPeakOutputForward(0.2);
+    // falcon.SetSelectedSensorPosition(0);
+    // falcon.SetNeutralMode(NeutralMode::Brake);
+
   }
   void TeleopPeriodic() override {
-    if(controller.GetAButtonPressed())
+    if(controller.GetAButton())
     {
-      // IntakeMaster.Set(0.2);
-      falcon.Set(TalonFXControlMode::Position, 3000);
+      IntakeMaster.Set(0.4);
+      // falcon.Set(TalonFXControlMode::Position, 3000);
+
     }
     else if (controller.GetBButton())
     {
-      // IntakeMaster.Set(-0.2);
-      x = falcon.GetSelectedSensorPosition();
-      falcon.Set(TalonFXControlMode::PercentOutput, (30000-x)/20000);
+      IntakeMaster.Set(-1);
+      // x = falcon.GetSelectedSensorPosition();
+      // falcon.Set(TalonFXControlMode::PercentOutput, (30000-x)/20000);
     }
-    else if (controller.GetXButtonPressed())
+    else
     {
-      falcon.Set(TalonFXControlMode::Position, 0);
+      IntakeMaster.Set(0);
     }
-    // else
-    // {
-    //   // IntakeMaster.Set(0);
-    // }
-    frc::SmartDashboard::PutNumber("percent", (30000-x)/20000);
-    frc::SmartDashboard::PutNumber("position", falcon.GetSelectedSensorPosition());
-    frc::SmartDashboard::PutNumber("dklfjsd", navX.GetYaw());
+    // frc::SmartDashboard::PutNumber("percent", (30000-x)/20000);
+    // frc::SmartDashboard::PutNumber("position", falcon.GetSelectedSensorPosition());
+    // frc::SmartDashboard::PutNumber("dklfjsd", navX.GetYaw());
   }
 };
 

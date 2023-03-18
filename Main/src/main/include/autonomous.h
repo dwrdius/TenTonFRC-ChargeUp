@@ -4,9 +4,12 @@
 #include <cmath>
 namespace autonomous {
     double kAutoCommandList[][3]={
-        {0, 60, 0},
+        {0, 200, 0},
         // ...
-        {0, 60, 0}
+        {-10, 200, 180},
+        {-10, 200, 180},
+        {-10, 200, 180},
+        {0, 100, 0}
     }; 
 }
 #endif

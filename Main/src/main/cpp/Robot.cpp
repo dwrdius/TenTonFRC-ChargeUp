@@ -55,6 +55,7 @@ double ArmOutCurr = 0;
 double IntakeOutCurr = 0;
 
 int autostop;
+int heresyTimer = 0;
 
 // true = going down; false = going up
 bool intakeState = true;
@@ -117,9 +118,9 @@ double linearDisplacement;
 double translationAngle;
 int autoIndex = 0;
 
-bool balance = true;
+bool cubeAutonomous = true;
+bool balance = false;
 bool onChargingStation = false;
-bool LEDStrobe = true;
 
 
         // // colour
@@ -168,7 +169,7 @@ desiredSwerveModule swerveKinematics(double xLeft, double yLeft, double xRight, 
     Point posVector = Point(0.0, 0.0);
     if (ArmMotor.GetSelectedSensorPosition())
     {
-        joystickMagnitude = fmin(1, -20000/ArmMotor.GetSelectedSensorPosition());
+        joystickMagnitude = fmin(1, abs(20000/ArmMotor.GetSelectedSensorPosition()));
     }
     double exponentialModification = magnitude(xLeft, yLeft);
     if (exponentialTrue)
@@ -259,7 +260,7 @@ frc::SwerveDriveOdometry<4> odometry{
 void moveToCoord()
 { 
     diffX = -(autonomous::kAutoCommandList[autoIndex][0] + currentPose.Y().value()*39.37);
-    diffY = -(autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value()*39.37);
+    diffY = (autonomous::kAutoCommandList[autoIndex][1] - currentPose.X().value()*39.37);
     diffAngle = fmod(autonomous::kAutoCommandList[autoIndex][2] - navX.GetAngle(), 360.0);
     translationAngle = atan2(diffX, diffY);
 
@@ -275,12 +276,12 @@ void moveToCoord()
     linearDisplacement = magnitude(diffX, diffY);
     autoRotationScalarFromCoords(diffAngle, linearDisplacement);
 
-    linearDisplacement = deadband(linearDisplacement, 1) / 40;  // 40 inches is the Kp for now 
+    linearDisplacement = deadband(linearDisplacement, 1) / 30;  // 30 inches is the Kp for now 
                                                                 //* using limelight distance allowance for this too
     if (!linearDisplacement)
     {
-        autoDesiredStates = swerveKinematics(0, 0, diffAngle/25, 0, false); // 25 is an arbitrary Kp again
-        if (!deadband(diffAngle, 2))
+        autoDesiredStates = swerveKinematics(0, 0, diffAngle/5, 0, false);
+        if (!deadband(diffAngle, 3))
         {
             autoIndex++;
         }
@@ -289,7 +290,7 @@ void moveToCoord()
     {
         autoDesiredStates = swerveKinematics(linearDisplacement*sin(translationAngle), linearDisplacement*cos(translationAngle), linearDisplacement, navX.GetAngle(), false);
     }
-    // frc::SmartDashboard::PutNumber("auto x", linearDisplacement*sin(translationAngle));
+    frc::SmartDashboard::PutNumber("Angle", navX.GetAngle());
     // frc::SmartDashboard::PutNumber("auto y", linearDisplacement*cos(translationAngle));
     // frc::SmartDashboard::PutNumber("auto xRight", linearDisplacement);
     // frc::SmartDashboard::PutNumber("auto rotation", mathConst::rotationVectorMultiplier);
@@ -336,7 +337,7 @@ void Robot::RobotInit()
     limitSpeeds(ShooterBottom, 1);
     
     IntakeUpDown.ConfigPeakOutputReverse(-0.5);
-    IntakeUpDown.ConfigPeakOutputForward(0.15);
+    IntakeUpDown.ConfigPeakOutputForward(0.3);
 
     IntakeUpDown.SetSelectedSensorPosition(0);
     ArmMotor.SetSelectedSensorPosition(0);
@@ -382,14 +383,16 @@ void Robot::AutonomousInit()
     IntakeUpDown.SetNeutralMode(NeutralMode::Brake);
     navX.ZeroYaw();
 
-    limitSpeeds(FLDriveMotor, 0.5);
-    limitSpeeds(FLSwerveMotor, 0.5);
-    limitSpeeds(FRDriveMotor, 0.5);
-    limitSpeeds(FRSwerveMotor, 0.5);
-    limitSpeeds(BLDriveMotor, 0.5);
-    limitSpeeds(BLSwerveMotor, 0.5);
-    limitSpeeds(BRDriveMotor, 0.5);
-    limitSpeeds(BRSwerveMotor, 0.5);
+    limitSpeeds(FLDriveMotor, 0.2);
+    limitSpeeds(FLSwerveMotor, 0.2);
+    limitSpeeds(FRDriveMotor, 0.2);
+    limitSpeeds(FRSwerveMotor, 0.2);
+    limitSpeeds(BLDriveMotor, 0.2);
+    limitSpeeds(BLSwerveMotor, 0.2);
+    limitSpeeds(BRDriveMotor, 0.2);
+    limitSpeeds(BRSwerveMotor, 0.2);
+
+    autostop = 0;
 }
 
 void Robot::AutonomousPeriodic() 
@@ -408,8 +411,8 @@ void Robot::AutonomousPeriodic()
         });
 
     // Display currentPose and rotation on SmartDashboard.
-    frc::SmartDashboard::PutNumber("X ", currentPose.X().value()*39.37);
-    frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value()*39.37);
+    frc::SmartDashboard::PutNumber("X ", -currentPose.Y().value()*39.37);
+    frc::SmartDashboard::PutNumber("Y ", currentPose.X().value()*39.37);
 
     // if(balance){
     //     double roll = deadband(navX.GetRoll(), 3);
@@ -433,77 +436,220 @@ void Robot::AutonomousPeriodic()
     //         roll = 1;
     //     }
 
+    frc::SmartDashboard::PutNumber("autoindex", autoIndex);
     if(balance){
-        double roll = deadband(navX.GetRoll(), 3);
-        if (abs(roll)>8)
+        if (autoIndex != 2 && autoIndex != 3 && autoIndex < 5)
         {
-            onChargingStation = true;
-            limitSpeeds(FLDriveMotor, 0.2);
-            limitSpeeds(FLSwerveMotor, 0.2);
-            limitSpeeds(FRDriveMotor, 0.2);
-            limitSpeeds(FRSwerveMotor, 0.2);
-            limitSpeeds(BLDriveMotor, 0.2);
-            limitSpeeds(BLSwerveMotor, 0.2);
-            limitSpeeds(BRDriveMotor, 0.2);
-            limitSpeeds(BRSwerveMotor, 0.2);
+            moveToCoord();
+            if (autoDesiredStates.fla < 600.0)
+            {
+                // Update wheel angles for the turn motors to read
+                desiredTurnFL = autoDesiredStates.fla;
+                desiredTurnFR = autoDesiredStates.fra;
+                desiredTurnBL = autoDesiredStates.bla;
+                desiredTurnBR = autoDesiredStates.bra;
+            }
+
+            setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+            setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+            setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+            setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
+            
         }
-        if (onChargingStation)
+        else if (autoIndex == 2)
         {
-            roll = -roll / 150;
+            table -> PutNumber("pipeline", 2);
+            ty = table -> GetNumber("ty", 0.0);
+            if (deadband(ty, 5) < 0)
+            {
+                LLAlignTranslation = -deadband(ty-0.5, 5)/50;
+            }
+            else if (deadband(ty, 5))
+            {
+                LLAlignTranslation = -deadband(ty+0.5, 5)/50;
+            }
+            else
+            {
+                LLAlignTranslation = 0;
+            }
+            autoDesiredStates = swerveKinematics(LLAlignTranslation, 0, 0, navX.GetAngle(), false);
+            if (autoDesiredStates.fla < 600.0)
+            {
+                // Update wheel angles for the turn motors to read
+                desiredTurnFL = autoDesiredStates.fla;
+                desiredTurnFR = autoDesiredStates.fra;
+                desiredTurnBL = autoDesiredStates.bla;
+                desiredTurnBR = autoDesiredStates.bra;
+            }
+
+            setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+            setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+            setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+            setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
+            
+            intakePos = 19500;
+            intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
+            frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
+            if (intakePos - IntakeUpDown.GetSelectedSensorPosition() < 1000 && !deadband(ty, 5))
+            {
+                intakePercentage = 0;
+                IntakeLeader.Set(0.2);
+                autoIndex = 3;
+            }
+            IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
         }
-        else{
-            roll = 1;
-        }
-        autoDesiredStates = swerveKinematics(0, -roll, 0, navX.GetAngle(), false);
-    }
-    else {
-        autostop++;
-        if (autostop < 20)
-        {
-            ShooterTop.Set(ControlMode::PercentOutput, -0.2);
-            ShooterBottom.Set(ControlMode::PercentOutput, -0.2);
-            IntakeLeader.Set(-0.2);
+        else if (autoIndex == 3){
+            //cry
+            if(heresyTimer > 50)
+            {
+                FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                FLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                FRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                BLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                BRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                autoIndex=4;
+                IntakeLeader.Set(0);
+            }
+            else
+            {
+                heresyTimer++;
+                autoDesiredStates = swerveKinematics(0, 0.5, 0, navX.GetAngle(), false);
+                if (autoDesiredStates.fla < 600.0)
+                {
+                    // Update wheel angles for the turn motors to read
+                    desiredTurnFL = autoDesiredStates.fla;
+                    desiredTurnFR = autoDesiredStates.fra;
+                    desiredTurnBL = autoDesiredStates.bla;
+                    desiredTurnBR = autoDesiredStates.bra;
+                }
+
+                setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+                setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+                setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+                setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
+            }
         }
         else
         {
-            if (autostop < 4020)
-            {
-                armPos = -53000;
-                ShooterTop.Set(ControlMode::PercentOutput, -0.05);
-                ShooterBottom.Set(ControlMode::PercentOutput, -0.05);
-                armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
-                ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
-                if(!ArmMotor.GetSelectedSensorVelocity())
-                {
-                    autostop = 4000; // arbitrary impossible value
-                }
-            }
-            else if (autostop < 4040)
+            FLSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            FRSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            BLSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            BRSwerveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            FLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            FRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            BLDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+            BRDriveMotor.Set(TalonFXControlMode::PercentOutput, 0);
+        }
+        if (!autoIndex)
+        {
+            armPos = 4000;
+            armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
+            ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
+            if(!ArmMotor.GetSelectedSensorVelocity() && !deadband(armPos-ArmMotor.GetSelectedSensorPosition(), 4))
             {
                 ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
-                ShooterTop.Set(ControlMode::PercentOutput, 0.9);
-                ShooterBottom.Set(ControlMode::PercentOutput, 1);
             }
-            else{
-                balance = true;
-                ShooterTop.Set(ControlMode::PercentOutput, 0);
-                ShooterBottom.Set(ControlMode::PercentOutput, 0);
+        }
+        else
+        {
+            ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
+        }
+        // double roll = deadband(navX.GetRoll(), 3);
+        // if (abs(roll)>8)
+        // {
+        //     onChargingStation = true;
+        //     limitSpeeds(FLDriveMotor, 0.2);
+        //     limitSpeeds(FLSwerveMotor, 0.2);
+        //     limitSpeeds(FRDriveMotor, 0.2);
+        //     limitSpeeds(FRSwerveMotor, 0.2);
+        //     limitSpeeds(BLDriveMotor, 0.2);
+        //     limitSpeeds(BLSwerveMotor, 0.2);
+        //     limitSpeeds(BRDriveMotor, 0.2);
+        //     limitSpeeds(BRSwerveMotor, 0.2);
+        // }
+        // if (onChargingStation)
+        // {
+        //     roll = -roll / 150;
+        // }
+        // else{
+        //     roll = 1;
+        // }
+        // autoDesiredStates = swerveKinematics(0, -roll, 0, navX.GetYaw(), false);
+    }
+    else if (cubeAutonomous) {
+        autostop++;
+        frc::SmartDashboard::PutNumber("Autostop", autostop);
+        if (autostop < 4000)
+        {
+            armPos = -50000;
+            armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
+            ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
+            if(!ArmMotor.GetSelectedSensorVelocity() && !deadband(armPos-ArmMotor.GetSelectedSensorPosition(), 4))
+            {
+                ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                autostop = 4000; // arbitrary impossible value
             }
-
+        }
+        else
+        {
+            if (autostop < 8000) // down
+            {
+                intakePos = 6000;
+                intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
+                frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
+                if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
+                {
+                    intakePercentage = fmin(-0.1, intakePercentage);
+                }
+                else
+                {
+                    intakePercentage = fmax(0.05, intakePercentage);
+                }
+                if (abs(intakePos - IntakeUpDown.GetSelectedSensorPosition()) < 1500 && autostop < 5000)
+                {
+                    autostop = 5000;
+                }
+                IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
+                if(autostop > 5020)
+                {
+                    IntakeLeader.Set(-1);
+                    if (autostop > 5040)
+                    {
+                        IntakeLeader.Set(0);
+                        autostop = 8000;
+                    }
+                }
+            }
+            else 
+            {
+                intakePos = 1500;
+                intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
+                frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
+                if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
+                {
+                    intakePercentage = fmin(-0.1, intakePercentage);
+                }
+                else
+                {
+                    intakePercentage = fmax(0.05, intakePercentage);
+                }
+                if (abs(intakePos - IntakeUpDown.GetSelectedSensorPosition()) < 1500)
+                {
+                    autostop = 12000;
+                }
+                IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
+                if (autostop > 11999)
+                {
+                    IntakeUpDown.Set(TalonFXControlMode::PercentOutput, 0);
+                    balance = true;
+                    cubeAutonomous = false;
+                }
+            }
         }
     }
-    if (autoDesiredStates.fla < 600.0)
-    {
-        // Update wheel angles for the turn motors to read
-        desiredTurnFL = autoDesiredStates.fla;
-        desiredTurnFR = autoDesiredStates.fra;
-        desiredTurnBL = autoDesiredStates.bla;
-        desiredTurnBR = autoDesiredStates.bra;
-    }
-    setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
-    setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
-    setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
-    setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
 }
 
 void Robot::TeleopInit() 
@@ -538,11 +684,11 @@ void Robot::TeleopPeriodic()
     if (controller.GetRightBumper()) {
         if (deadband(ty, 5) < 0)
         {
-            LLAlignTranslation = -deadband(ty+0.3, 5)/50;
+            LLAlignTranslation = -deadband(ty-0.5, 5)/50;
         }
         else if (deadband(ty, 5))
         {
-            LLAlignTranslation = -deadband(ty-0.3, 5)/50;
+            LLAlignTranslation = -deadband(ty+0.5, 5)/50;
         }
         else
         {
@@ -791,7 +937,7 @@ void Robot::TeleopPeriodic()
     if (controllerAux.GetXButton()){
         ShooterTop.Set(ControlMode::PercentOutput, -0.5);
         ShooterBottom.Set(ControlMode::PercentOutput, -0.5);
-        IntakeLeader.Set(-0.2);
+        // IntakeLeader.Set(-0.2);
     }
     else if (controllerAux.GetYButton()){
         ShooterTop.Set(ControlMode::PercentOutput, 0.9);

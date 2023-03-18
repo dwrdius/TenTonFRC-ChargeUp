@@ -1,0 +1,141 @@
+void Robot::AutonomousPeriodic() 
+{
+    // Get the rotation of the robot from the gyro.
+    frc::Rotation2d rotation = navX.GetRotation2d();
+
+    // Update the currentPose.
+    currentPose = odometry.Update(
+        rotation,
+        {
+            frc::SwerveModulePosition{TalonFXToInches(FLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FLCANCoder.GetPosition()})}, 
+            frc::SwerveModulePosition{TalonFXToInches(FRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{FRCANCoder.GetPosition()})}, 
+            frc::SwerveModulePosition{TalonFXToInches(BLDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BLCANCoder.GetPosition()})}, 
+            frc::SwerveModulePosition{TalonFXToInches(BRDriveMotor.GetSelectedSensorPosition()), frc::Rotation2d(units::angle::degree_t{BRCANCoder.GetPosition()})}
+        });
+
+    // Display currentPose and rotation on SmartDashboard.
+    frc::SmartDashboard::PutNumber("X ", currentPose.X().value()*39.37);
+    frc::SmartDashboard::PutNumber("Y ", currentPose.Y().value()*39.37);
+
+    // if(balance){
+    //     double roll = deadband(navX.GetRoll(), 3);
+    //     if (abs(roll)>8)
+    //     {
+    //         onChargingStation = true;
+    //         limitSpeeds(FLDriveMotor, 0.3);
+    //         limitSpeeds(FLSwerveMotor, 0.3);
+    //         limitSpeeds(FRDriveMotor, 0.3);
+    //         limitSpeeds(FRSwerveMotor, 0.3);
+    //         limitSpeeds(BLDriveMotor, 0.3);
+    //         limitSpeeds(BLSwerveMotor, 0.3);
+    //         limitSpeeds(BRDriveMotor, 0.3);
+    //         limitSpeeds(BRSwerveMotor, 0.3);
+    //     }
+    //     if (onChargingStation && abs(roll) < 6 && roll)
+    //     {
+    //         roll = fmax(-roll / 120, -roll/abs(roll)*0.02); // 0.02 is minimum move speed for balance
+    //     }
+    //     else{
+    //         roll = 1;
+    //     }
+
+    if(balance){
+        // double roll = deadband(navX.GetRoll(), 3);
+        // if (abs(roll)>8)
+        // {
+        //     onChargingStation = true;
+        //     limitSpeeds(FLDriveMotor, 0.2);
+        //     limitSpeeds(FLSwerveMotor, 0.2);
+        //     limitSpeeds(FRDriveMotor, 0.2);
+        //     limitSpeeds(FRSwerveMotor, 0.2);
+        //     limitSpeeds(BLDriveMotor, 0.2);
+        //     limitSpeeds(BLSwerveMotor, 0.2);
+        //     limitSpeeds(BRDriveMotor, 0.2);
+        //     limitSpeeds(BRSwerveMotor, 0.2);
+        // }
+        // if (onChargingStation)
+        // {
+        //     roll = -roll / 150;
+        // }
+        // else{
+        //     roll = 1;
+        // }
+        // autoDesiredStates = swerveKinematics(0, -roll, 0, navX.GetYaw(), false);
+    }
+    else if (cubeAutonomous) {
+        autostop++;
+        frc::SmartDashboard::PutNumber("Autostop", autostop);
+        if (autostop < 4000)
+        {
+            armPos = -50000;
+            armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
+            ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
+            if(!ArmMotor.GetSelectedSensorVelocity() && !deadband(armPos-ArmMotor.GetSelectedSensorPosition(), 4))
+            {
+                ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
+                autostop = 4000; // arbitrary impossible value
+            }
+        }
+        else
+        {
+            if (autostop < 8000) // down
+            {
+                intakePos = 6000;
+                intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
+                frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
+                if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
+                {
+                    intakePercentage = fmin(-0.1, intakePercentage);
+                }
+                else
+                {
+                    intakePercentage = fmax(0.05, intakePercentage);
+                }
+                if (abs(intakePos - IntakeUpDown.GetSelectedSensorPosition()) < 1500 && autostop < 5000)
+                {
+                    autostop = 5000;
+                }
+                IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
+                if(autostop > 5020)
+                {
+                    IntakeLeader.Set(-1);
+                    if (autostop > 5040)
+                    {
+                        IntakeLeader.Set(0);
+                        autostop = 8000;
+                    }
+                }
+            }
+            else 
+            {
+                intakePos = 1500;
+                intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
+                frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
+                if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
+                {
+                    if((intakePos-IntakeUpDown.GetSelectedSensorPosition()) > -1000)
+                    {
+                        intakePercentage = fmin(-0.08, intakePercentage);
+                        autostop = 12000;
+                    }
+                    else
+                    {
+                        intakePercentage = fmin(-0.1, intakePercentage);
+                    }
+                }
+                else if (intakePos - IntakeUpDown.GetSelectedSensorPosition() < 1000)
+                {
+                    intakePercentage = 0;
+                    autostop = 12000;
+                }
+                IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
+                if (autostop == 12000)
+                {
+                    IntakeUpDown.Set(TalonFXControlMode::PercentOutput, 0);
+                    balance = true;
+                    cubeAutonomous = false;
+                }
+            }
+        }
+    }
+}
