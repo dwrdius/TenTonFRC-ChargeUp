@@ -54,7 +54,7 @@ namespace RevIDs {
 }
 
 namespace mathConst {
-    const double speedLimit = 0.3;             // limit motor speed output   0 < x <= 1
+    const double speedLimit = 0.5;             // limit motor speed output   0 < x <= 1
    
     // rotation:translation ratio
     double rotationVectorMultiplier = 0.4; 
@@ -126,14 +126,22 @@ namespace Odometry {
 namespace Exponentiation {
     const double nexus = 0.587;
     
-    const double arb_a = 0.458618;
-    const double arb_b = 18.7947;
-    const double arb_c = 0.35067;
-    const double arb_d = -0.000669604;
-    const double arb_e = 0.11044;
-    const double arb_f = 8.20047;
-    const double arb_g = 0.797399;
-    const double arb_h = 0.418337;
+    const double arb_a = 0.497914;
+    const double arb_b = 21.4711;
+    const double arb_c = 0.374127;
+    const double arb_d = -0.000182195;
+    const double arb_e = 0.0904269;
+    const double arb_f = 8.87463;
+    const double arb_g = 0.800117;
+    const double arb_h = 0.46705;
 }
+
+
+
+
+
+
+
+
 
 #endif

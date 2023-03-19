@@ -1,7 +1,5 @@
 #include "Robot.h"
 
-// Initialize devices.
-
 // Main Controller
 frc::XboxController controller{ControllerIDs::kControllerMainID};
 //secondary controller
@@ -45,21 +43,12 @@ AHRS navX{frc::SPI::kMXP};
 // LED
 frc::PWMSparkMax LED{RevIDs::kLED};
 
-// Colour Sensor
-rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
-
 frc::DigitalInput armLimitSwitch{0};
 
 // Limelight shenanigans
 auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
 double tx;
 double ty;
-
-rev::ColorMatch m_colorMatcher;
-frc::Color detectedColor;
-std::string colorstring;
-frc::Color matchedColor;
-double confidence;
 
 void Robot::RobotInit() 
 {
@@ -80,9 +69,6 @@ void Robot::RobotInit()
     ShooterBottom.SetNeutralMode(NeutralMode::Coast);
     IntakeUpDown.SetNeutralMode(NeutralMode::Coast);
     
-    m_colorMatcher.AddColorMatch(Colours::KYellowTarget);
-    m_colorMatcher.AddColorMatch(Colours::KPurpleTarget);
-
     FLDriveMotor.SetSelectedSensorPosition(0);
     FRDriveMotor.SetSelectedSensorPosition(0);
     BLDriveMotor.SetSelectedSensorPosition(0);
@@ -102,14 +88,6 @@ void Robot::RobotInit()
 }
 void Robot::RobotPeriodic() 
 {
-    detectedColor = m_colorSensor.GetColor();
-    matchedColor = m_colorMatcher.MatchClosestColor(detectedColor, confidence);
-    if(matchedColor == Colours::KYellowTarget) {
-        colorstring = "Yellow";
-    }
-    else if (matchedColor == Colours::KPurpleTarget){
-        colorstring = "Purple";
-    }
     
     frc::SmartDashboard::PutNumber("Limit", armLimitSwitch.Get());
 
@@ -140,7 +118,20 @@ void Robot::AutonomousPeriodic()
 void Robot::TeleopInit() 
 {}
 void Robot::TeleopPeriodic()
-{}
+{
+    if (controller.GetAButton())
+    {
+        IntakeUpDown.SetNeutralMode(NeutralMode::Brake);
+    }
+    else
+    {
+        IntakeUpDown.SetNeutralMode(NeutralMode::Coast);
+    }
+    if (controller.GetBButton())
+    {
+        IntakeUpDown.Set(TalonFXControlMode::PercentOutput, -0.07);
+    }
+}
 
 void Robot::TestInit() {} 
 void Robot::TestPeriodic() {}
