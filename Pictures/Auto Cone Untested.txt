@@ -1,0 +1,37 @@
+UNTESTED --> REPLACE CUBE IF IMPLEMENTING
+
+// cone
+        // autostop++;
+        // if (autostop < 20)
+        // {
+        //     ShooterTop.Set(ControlMode::PercentOutput, -0.2);
+        //     ShooterBottom.Set(ControlMode::PercentOutput, -0.2);
+        //     IntakeLeader.Set(-0.05);
+        // }
+        // else
+        // {
+        //     if (autostop < 4020)
+        //     {
+        //         armPos = -53000;
+        //         ShooterTop.Set(ControlMode::PercentOutput, -0.05);
+        //         ShooterBottom.Set(ControlMode::PercentOutput, -0.05);
+        //         armPercentage = (armPos-ArmMotor.GetSelectedSensorPosition())/10000;
+        //         ArmMotor.Set(TalonFXControlMode::PercentOutput, armPercentage);
+        //         if(!ArmMotor.GetSelectedSensorVelocity())
+        //         {
+        //             autostop = 4000; // arbitrary impossible value
+        //         }
+        //     }
+        //     else if (autostop < 4040)
+        //     {
+        //         ArmMotor.Set(TalonFXControlMode::PercentOutput, 0);
+        //         ShooterTop.Set(ControlMode::PercentOutput, 0.9);
+        //         ShooterBottom.Set(ControlMode::PercentOutput, 1);
+        //     }
+        //     else{
+        //         balance = true;
+        //         ShooterTop.Set(ControlMode::PercentOutput, 0);
+        //         ShooterBottom.Set(ControlMode::PercentOutput, 0);
+        //     }
+
+        // }
