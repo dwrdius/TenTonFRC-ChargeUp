@@ -129,7 +129,7 @@ void Robot::TeleopPeriodic()
     }
     if (controller.GetBButton())
     {
-        IntakeUpDown.Set(TalonFXControlMode::PercentOutput, -0.07);
+        IntakeUpDown.Set(TalonFXControlMode::PercentOutput, -0.05);
     }
 }
 

@@ -468,7 +468,7 @@ void Robot::AutonomousPeriodic()
         }
         else if (autoIndex == 2)
         {
-            table -> PutNumber("pipeline", 2);
+            table -> PutNumber("pipeline", Limelight::Cone);
             ty = table -> GetNumber("ty", 0.0);
             if (deadband(ty, 5) < 0)
             {
@@ -497,7 +497,7 @@ void Robot::AutonomousPeriodic()
             setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
             setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
             
-            intakePos = 25000;
+            intakePos = 28000;
             intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/80000;
             if (intakePercentage < 0 && !intakeLimitSwitch.Get())
             {
@@ -654,7 +654,7 @@ void Robot::AutonomousPeriodic()
         {
             if (autostop < 8000) // down
             {
-                intakePos = 7000;
+                intakePos = 10000;
                 intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition())/50000;
                 frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
                 if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
@@ -877,13 +877,13 @@ void Robot::TeleopPeriodic()
         {
             armState = 1;
             heightToGoal = Limelight::tallHeightInches - Limelight::limelightLensHeightInches;
-            table -> PutNumber("pipeline", 1);
+            table -> PutNumber("pipeline", Limelight::TopReflective);
         }
         else if (controllerAux.GetPOV()==90)
         {
             armState = 2;
             heightToGoal = Limelight::midHeightInches - Limelight::limelightLensHeightInches;
-            table -> PutNumber("pipeline", 3);
+            table -> PutNumber("pipeline", Limelight::BottomReflective);
         }
         else if (controllerAux.GetPOV()==270)
         {
@@ -902,7 +902,7 @@ void Robot::TeleopPeriodic()
             }
             else
             {
-                if (IntakeUpDown.GetSelectedSensorPosition()<3000 && !IntakeUpDown.GetSelectedSensorVelocity())
+                if (IntakeUpDown.GetSelectedSensorPosition()<6000 && !IntakeUpDown.GetSelectedSensorVelocity())
                 {
                     if (ArmMotor.GetSelectedSensorPosition()>(-10000) && !armState)
                     {
@@ -926,7 +926,7 @@ void Robot::TeleopPeriodic()
                 }
                 else
                 {
-                    intakePos = 3500;
+                    intakePos = 2000;
                     intakeActive = true;
                     intakeStage = 1;
                 }
@@ -983,33 +983,32 @@ void Robot::TeleopPeriodic()
     {
         intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition());
         frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
-        if (abs(intakePos-IntakeUpDown.GetSelectedSensorPosition()) < 500)
-        {
-            intakePercentage = -0.065;
-        }
-        else if (intakePos-IntakeUpDown.GetSelectedSensorPosition() < 0)
+        if (deadband(intakePos-IntakeUpDown.GetSelectedSensorPosition(), 4) < 0)
         {
             intakePercentage = fmin(-0.1, intakePercentage / 50000);
         }
-        else 
+        else if (deadband(intakePos-IntakeUpDown.GetSelectedSensorPosition(), 4) > 0)
         {
-            intakePercentage = intakePercentage / 80000;
+            intakePercentage = fmax(0.05, intakePercentage / 80000);
+        }
+        else{
+            intakePercentage = 0;
         }
     }
     frc::SmartDashboard::PutNumber("percentage intake", intakePercentage);
     IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
 
     if(controller.GetYButtonPressed()){ // up
-        intakePos = 3500;
+        intakePos = 2000;
         intakeActive = true;
     }
     else if (controller.GetXButtonPressed()){ // down
-        intakePos = 27000;
+        intakePos = 28000;
         intakeActive = true;
     }
     else if (controllerAux.GetLeftTriggerAxis()>0.5)
     {
-        intakePos = 8000;
+        intakePos = 6000;
         intakeActive = true;
     }
 

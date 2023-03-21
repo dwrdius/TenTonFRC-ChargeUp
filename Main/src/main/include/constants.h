@@ -102,6 +102,11 @@ namespace Limelight {
     // distance from the target to the floor
     const double midHeightInches = 23.5;
     const double tallHeightInches = 43.75;    
+
+    const int TopReflective = 1;
+    const int BottomReflective = 2;
+    const int April = 3;
+    const int Cone = 4;
 }
     
 namespace Colours {
