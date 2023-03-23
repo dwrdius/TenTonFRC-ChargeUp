@@ -135,6 +135,8 @@ bool throttle;
 double alignEast;
 double alignSouth;
 
+bool intakeLimitUpdate;
+
 // Stores all Swerve Module desired values
 struct desiredSwerveModule
 {
@@ -337,7 +339,7 @@ void Robot::RobotInit()
     limitSpeeds(ShooterTop, 1);
     limitSpeeds(ShooterBottom, 1);
     
-    IntakeUpDown.ConfigPeakOutputReverse(-0.5);
+    IntakeUpDown.ConfigPeakOutputReverse(-0.3);
     IntakeUpDown.ConfigPeakOutputForward(0.15);
 
     IntakeUpDown.SetSelectedSensorPosition(0);
@@ -346,6 +348,7 @@ void Robot::RobotInit()
 void Robot::RobotPeriodic() 
 {
     frc::SmartDashboard::PutNumber("Arm Limit", armLimitSwitch.Get());
+    frc::SmartDashboard::PutNumber("Intake Limit", intakeLimitSwitch.Get());
             // detectedColor = m_colorSensor.GetColor();
             // matchedColor = m_colorMatcher.MatchClosestColor(detectedColor, confidence);
             // if(matchedColor == Colours::KYellowTarget) {
@@ -364,14 +367,14 @@ void Robot::RobotPeriodic()
     frc::SmartDashboard::PutNumber("Neo14", neo14.GetVelocity());
     frc::SmartDashboard::PutNumber("Neo13", neo13.GetVelocity());
 
-    if (!armLimitSwitch.Get())
-    {
-        ArmMotor.SetSelectedSensorPosition(500);
-    }
-    if (!intakeLimitSwitch.Get())
-    {
-        IntakeUpDown.SetSelectedSensorPosition(0);
-    }
+    // if (!armLimitSwitch.Get())
+    // {
+    //     ArmMotor.SetSelectedSensorPosition(500);
+    // }
+    // if (!intakeLimitSwitch.Get())
+    // {
+    //     IntakeUpDown.SetSelectedSensorPosition(0);
+    // }
 }
 
 void Robot::AutonomousInit() 
@@ -663,9 +666,9 @@ void Robot::AutonomousPeriodic()
                 }
                 else
                 {
-                    intakePercentage = fmax(0.05, intakePercentage);
+                    intakePercentage = fmax(0.1, intakePercentage);
                 }
-                if (abs(intakePos - IntakeUpDown.GetSelectedSensorPosition()) < 1500 && autostop < 5000)
+                if (abs(intakePos - IntakeUpDown.GetSelectedSensorPosition()) < 500 && autostop < 5000)
                 {
                     autostop = 5000;
                 }
@@ -786,14 +789,15 @@ void Robot::TeleopPeriodic()
     else {
         moduleDesiredStates = swerveKinematics(deadband(controller.GetLeftX(), 0), deadband(controller.GetLeftY(), 0), deadband(controller.GetRightX(), 0), navX.GetAngle(), false);
     }
+
     // //Intake's intake mechanism
     if(controller.GetRightTriggerAxis())
     {
-      IntakeLeader.Set(0.5);
+         IntakeLeader.Set(0.5);
     }
     else if (controller.GetBButton())
     {
-      IntakeLeader.Set(-1);
+        IntakeLeader.Set(-1);
     }
     else
     {
@@ -902,16 +906,16 @@ void Robot::TeleopPeriodic()
             }
             else
             {
-                if (IntakeUpDown.GetSelectedSensorPosition()<6000 && !IntakeUpDown.GetSelectedSensorVelocity())
+                if (IntakeUpDown.GetSelectedSensorPosition()<3000)
                 {
-                    if (ArmMotor.GetSelectedSensorPosition()>(-10000) && !armState)
+                    if (ArmMotor.GetSelectedSensorPosition()>(-6000) && !armState)
                     {
                         intakeStage++;
                         if (intakeStage < 50)
                         {
                             ShooterTop.Set(ControlMode::PercentOutput, -0.4);
                             ShooterBottom.Set(ControlMode::PercentOutput, -0.4);
-                            // IntakeLeader.Set(-0.2);
+                            IntakeLeader.Set(-0.2);
                         }
                         else
                         {
@@ -926,7 +930,7 @@ void Robot::TeleopPeriodic()
                 }
                 else
                 {
-                    intakePos = 2000;
+                    intakePos = 6000;
                     intakeActive = true;
                     intakeStage = 1;
                 }
@@ -975,7 +979,7 @@ void Robot::TeleopPeriodic()
     // }
 
     if (IntakeUpDown.GetOutputCurrent()>37)
-    {
+    { 
         intakePercentage = 0;
         intakePos = IntakeUpDown.GetSelectedSensorPosition();
     }
@@ -983,33 +987,50 @@ void Robot::TeleopPeriodic()
     {
         intakePercentage = (intakePos-IntakeUpDown.GetSelectedSensorPosition());
         frc::SmartDashboard::PutNumber("Intake Error", intakePos-IntakeUpDown.GetSelectedSensorPosition());
-        if (deadband(intakePos-IntakeUpDown.GetSelectedSensorPosition(), 4) < 0)
+        if (abs(intakePercentage) < 200)
+        {
+            if (intakeLimitSwitch.Get())
+            {
+                intakePercentage = -0.03;
+            }
+            else
+            {
+                intakePercentage = 0;
+            }
+        }
+        else if (intakePercentage < 0 && intakeLimitSwitch.Get())
         {
             intakePercentage = fmin(-0.1, intakePercentage / 50000);
         }
-        else if (deadband(intakePos-IntakeUpDown.GetSelectedSensorPosition(), 4) > 0)
+        else if (intakePercentage > 0)
         {
-            intakePercentage = fmax(0.05, intakePercentage / 80000);
+            intakePercentage = fmax(0.1, intakePercentage / 50000);
         }
-        else{
+        else
+        {
             intakePercentage = 0;
         }
+        
     }
     frc::SmartDashboard::PutNumber("percentage intake", intakePercentage);
     IntakeUpDown.Set(TalonFXControlMode::PercentOutput, intakePercentage);
 
     if(controller.GetYButtonPressed()){ // up
-        intakePos = 2000;
+        intakePos = 0;
         intakeActive = true;
     }
     else if (controller.GetXButtonPressed()){ // down
-        intakePos = 28000;
+        intakePos = 30000;
         intakeActive = true;
     }
     else if (controllerAux.GetLeftTriggerAxis()>0.5)
     {
-        intakePos = 6000;
+        intakePos = 10000;
         intakeActive = true;
+    }
+    else if (controller.GetLeftBumper())
+    {
+        intakePos = 6000;
     }
 
     if (controllerAux.GetXButton()){
@@ -1068,11 +1089,7 @@ void Robot::TeleopPeriodic()
         
     }
     
-    if (controller.GetLeftBumper())
-    {
-        LED.Set(0.73); // lime
-    }
-    else if (controller.GetPOV()!=-1)
+    if (controller.GetPOV()!=-1)
     {
         LED.Set(0.3); // yellow
     }
