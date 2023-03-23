@@ -44,6 +44,20 @@ double angleOptimisation(double initialAngle, double finalAngle)
     return diff + 360.0;
 }
 
+double constrainToPlusMinus180 (double angle)
+{
+    angle = fmod (angle, 360.0);
+    if (angle > 180.0)
+    {
+        angle = angle - 360.0;
+    }
+    else if (angle < -180.0)
+    {
+        angle = angle + 360.0;
+    }
+    return angle;
+}
+
 // Given an array of values, find the largest member greater than 1
 // if all members are less than one, return 1
 // else, return largest value
@@ -203,6 +217,9 @@ double aprilAlign (double NavX)
         return -90;
     }
 
+// redefines rotation scalar to reach A position at B angle given equal joystick magnitudes 
+// eg. move to (3, 40) at 90 degrees
+// point towards 40.11 degrees at full throttle (left joy), point right at full throttle (right joy) 
 // btw everything breaks with an asymmetrical base
 void autoRotationScalarFromCoords(double dAngle, double lDisplacement)
 {

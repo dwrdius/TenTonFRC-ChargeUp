@@ -1,0 +1,25 @@
+// // Colour Sensor
+        // rev::ColorSensorV3 m_colorSensor{frc::I2C::Port::kOnboard};
+
+        // // colour
+        // rev::ColorMatch m_colorMatcher;
+        // frc::Color detectedColor;
+        // std::string colorstring;
+        // frc::Color matchedColor;
+        // double confidence;
+
+        // detectedColor = m_colorSensor.GetColor();
+        // matchedColor = m_colorMatcher.MatchClosestColor(detectedColor, confidence);
+        // if(matchedColor == Colours::KYellowTarget) {
+        //     colorstring = "Yellow";
+        // }
+        // else if (matchedColor == Colours::KPurpleTarget){
+        //     colorstring = "Purple";
+        // }
+        // frc::SmartDashboard::PutNumber("Red", detectedColor.red);
+        // frc::SmartDashboard::PutNumber("Blue", detectedColor.blue);
+        // frc::SmartDashboard::PutNumber("Green", detectedColor.green);
+        // frc::SmartDashboard::PutNumber("Confidence", confidence);
+        // frc::SmartDashboard::PutString("Detected Color", colorstring);
+        // uint32_t proximity = m_colorSensor.GetProximity();
+        // frc::SmartDashboard::PutNumber("Proximity", proximity);

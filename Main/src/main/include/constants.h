@@ -101,7 +101,12 @@ namespace Limelight {
 
     // distance from the target to the floor
     const double midHeightInches = 23.5;
-    const double tallHeightInches = 43.75;    
+    const double tallHeightInches = 43.75;
+
+    const int TopReflective = 1;
+    const int BottomReflective = 2;
+    const int April = 3;
+    const int Cone = 4;
 }
     
 namespace Colours {
@@ -136,12 +141,16 @@ namespace Exponentiation {
     const double arb_h = 0.46705;
 }
 
-
-
-
-
-
-
-
+namespace PositionPreset {
+    int IntakeTop = 3500;
+    int IntakeBottom = 25000;
+    int IntakeCubeTop = 6000;
+    int IntakeCubeMiddle = 10000;
+    int ArmTop = -77000; // Top post shooting position
+    int ArmMiddle = -53000; // Middle post shooting position
+    int ArmSingleSubstation = -45000; // Substation intake position
+    int ArmTopHandoff = -20000; // Arm position when lifting intake
+    int ArmBottomHandoff = -3000; // Arm position when transferring cone
+}
 
 #endif
