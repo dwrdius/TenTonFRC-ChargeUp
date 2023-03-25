@@ -1,6 +1,7 @@
 #pragma once
 
 #include <frc/TimedRobot.h>
+#include <frc/DriverStation.h>
 
 // std
 #include <cmath>

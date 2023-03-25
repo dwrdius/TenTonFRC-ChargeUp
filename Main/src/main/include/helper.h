@@ -44,6 +44,19 @@ double angleOptimisation(double initialAngle, double finalAngle)
     return diff + 360.0;
 }
 
+double constrict180 (double angle)
+{
+    if (angle > 180.0)
+    {
+        angle = angle - 360.0;
+    }
+    else if (angle < -180.0)
+    {
+        angle = angle + 360.0;
+    }
+    return angle;
+}
+
 // Given an array of values, find the largest member greater than 1
 // if all members are less than one, return 1
 // else, return largest value
@@ -143,7 +156,7 @@ double deadband(double input, int mode)
 
 double driveCalcs(double magnitude, double CANCoder, double angle)
 {
-    return mathConst::speedLimit*magnitude*magnitudeOptimization(CANCoder, angle);
+    return mathConst::pseudoSpeedLimit*magnitude*magnitudeOptimization(CANCoder, angle);
 }
 
 double swerveCalcs(double CANCoder, double desiredAngle)

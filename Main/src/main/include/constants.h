@@ -54,8 +54,8 @@ namespace RevIDs {
 }
 
 namespace mathConst {
-    const double speedLimit = 0.5;             // limit motor speed output   0 < x <= 1
-   
+    const double speedLimit = 0.75;             // limit motor speed output   0 < x <= 1
+    double pseudoSpeedLimit = speedLimit;
     // rotation:translation ratio
     double rotationVectorMultiplier = 0.4; 
 
@@ -113,6 +113,11 @@ namespace Colours {
     static const frc::Color KYellowTarget = frc::Color(0.4, 0.45, 0.1);
     static const frc::Color KPurpleTarget = frc::Color(0.27, 0.4, 0.2);
 } 
+
+namespace Alliances {
+    int Red = 1;
+    int Blue = 2;
+}
 
 namespace CANCoderOffsets {
         constexpr double kFrontLeft{55.810547};
