@@ -27,6 +27,7 @@
 
 // log outputs
 #include <frc/smartdashboard/SmartDashboard.h>
+#include <frc/smartdashboard/SendableChooser.h>
 
 // include files
 #include "logValues.h"

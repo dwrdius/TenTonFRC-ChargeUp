@@ -116,7 +116,7 @@ namespace Colours {
 
 namespace Alliances {
     int Red = 1;
-    int Blue = 2;
+    int Blue = -1;
 }
 
 namespace CANCoderOffsets {
