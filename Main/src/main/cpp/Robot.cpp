@@ -438,15 +438,15 @@ void Robot::AutonomousInit()
     navX.ZeroYaw();
     navX.SetAngleAdjustment(0);
 
-    limitSpeeds(FLDriveMotor, 0.4);
-    limitSpeeds(FLSwerveMotor, 0.4);
-    limitSpeeds(FRDriveMotor, 0.4);
-    limitSpeeds(FRSwerveMotor, 0.4);
-    limitSpeeds(BLDriveMotor, 0.4);
-    limitSpeeds(BLSwerveMotor, 0.4);
-    limitSpeeds(BRDriveMotor, 0.4);
-    limitSpeeds(BRSwerveMotor, 0.4);
-    mathConst::pseudoSpeedLimit = 0.4;
+    limitSpeeds(FLDriveMotor, 0.5);
+    limitSpeeds(FLSwerveMotor, 0.5);
+    limitSpeeds(FRDriveMotor, 0.5);
+    limitSpeeds(FRSwerveMotor, 0.5);
+    limitSpeeds(BLDriveMotor, 0.5);
+    limitSpeeds(BLSwerveMotor, 0.5);
+    limitSpeeds(BRDriveMotor, 0.5);
+    limitSpeeds(BRSwerveMotor, 0.5);
+    mathConst::pseudoSpeedLimit = 0.5;
 
     autostop = 0;
 }
@@ -1322,9 +1322,6 @@ void Robot::AutonomousPeriodic()
             }
         }
     } 
-    else if () {
-        // empty
-    } 
     else if (m_chooser.GetSelected() == kCubeBalanceLeft || m_chooser.GetSelected() == kCubeBalanceRight) {
         if(balance){
             // double roll = deadband(navX.GetRoll(), 3);
@@ -1386,7 +1383,31 @@ void Robot::AutonomousPeriodic()
             // setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
         }
         else if(coneCollect){
-            if (autoIndex == 0 || autoIndex == 1)
+            
+            if (autoIndex == 0)
+            {
+                if (m_chooser.GetSelected() == kCubeBalanceLeft)
+                {
+                    moveToPosition(-2, 160, 0);
+                }
+                else{
+                    moveToPosition(2, 160, 0);
+                }    
+                if (autoDesiredStates.fla < 600.0)
+                {
+                    // Update wheel angles for the turn motors to read
+                    desiredTurnFL = autoDesiredStates.fla;
+                    desiredTurnFR = autoDesiredStates.fra;
+                    desiredTurnBL = autoDesiredStates.bla;
+                    desiredTurnBR = autoDesiredStates.bra;
+                }
+
+                setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
+                setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
+                setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
+                setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
+            }
+            else if (autoIndex == 1)
             {
                 moveToCoord();
                 if (autoDesiredStates.fla < 600.0)
@@ -1532,10 +1553,10 @@ void Robot::AutonomousPeriodic()
             {
                 if (m_chooser.GetSelected() == kCubeBalanceLeft)
                 {
-                    moveToPosition(70, 190, 180);
+                    moveToPosition(70, 200, 180);
                 }
                 else{
-                    moveToPosition(-70, 190, 180);
+                    moveToPosition(-70, 200, 180);
                 }
                 
                 if (autoDesiredStates.fla < 600.0)
@@ -1823,15 +1844,14 @@ void Robot::TeleopPeriodic()
     }
     else if (controller.GetBButton())
     {
-        IntakeLeader.Set(-1);
-        // if (IntakeUpDown.GetSelectedSensorPosition() > 25000)
-        // {
-        //     IntakeLeader.Set(-1);    
-        // }
-        // else
-        // {
-        //     IntakeLeader.Set(-1);
-        // }
+        if (IntakeUpDown.GetSelectedSensorPosition() > 25000)
+        {
+            IntakeLeader.Set(-0.4);    
+        }
+        else
+        {
+            IntakeLeader.Set(-1);
+        }
     }
     else if (controllerAux.GetBButton())
     {
@@ -2077,8 +2097,16 @@ void Robot::TeleopPeriodic()
         // IntakeLeader.Set(-0.2);
     }
     else if (controllerAux.GetYButton()){
-        ShooterTop.Set(ControlMode::PercentOutput, 0.9);
-        ShooterBottom.Set(ControlMode::PercentOutput, 1);
+        if (ArmMotor.GetSelectedSensorPosition()>-30000)
+        {
+            ShooterTop.Set(ControlMode::PercentOutput, 0.2);
+            ShooterBottom.Set(ControlMode::PercentOutput, 0.2);
+        }
+        else
+        {
+            ShooterTop.Set(ControlMode::PercentOutput, 0.9);
+            ShooterBottom.Set(ControlMode::PercentOutput, 1);
+        }
     }
     else {
         ShooterTop.Set(ControlMode::PercentOutput, 0);

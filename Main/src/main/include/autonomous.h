@@ -4,7 +4,7 @@
 #include <cmath>
 namespace autonomous {
     double kAutoCommandList[][3]={
-        {0, 160, 0}, //0
+        {-10, 160, 0}, //0
         {0, 220, 180}, //1
         {0, 220, 180}, //2
         {0, 220, 180}, //3
