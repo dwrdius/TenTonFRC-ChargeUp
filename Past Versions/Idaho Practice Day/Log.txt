@@ -1,0 +1,5 @@
+A button now lifts the intake manual
+
+holding for exactly 20 ticks resets zero
+
+may need tuning because the zero seems to still have error from time to time

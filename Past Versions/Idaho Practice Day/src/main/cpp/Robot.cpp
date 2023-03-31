@@ -1790,7 +1790,7 @@ void Robot::TeleopPeriodic()
         {
             intakePercentage = 0;
             intakeReset++;
-            if (intakeReset == 50)
+            if (intakeReset == 20)
             {
                 IntakeUpDown.SetSelectedSensorPosition(0);
             }
