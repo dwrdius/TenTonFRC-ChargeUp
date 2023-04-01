@@ -9,6 +9,20 @@ double magnitude(double x, double y)
     return sqrt(x * x + y * y);
 }
 
+// pos = 1, neg = -1, 0 = 0
+double signVal (double x)
+{
+    if (x>0)
+    {
+        return 1;
+    }
+    else if (x<0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
 // depending on the angles, the optimal turn may reverse motor direction
 // Returns 1 or -1 based on optimal turn angle
 // Takes initial and desired angle
@@ -96,6 +110,7 @@ double slew(double currentPercentage, double desiredPercentage, int mode)
             break;
         case 2:
             slewRate = 0.1;
+            break;
     }
     if (abs(diff)>=slewRate)
     {
