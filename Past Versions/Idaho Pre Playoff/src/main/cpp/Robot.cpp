@@ -489,7 +489,7 @@ void Robot::AutonomousPeriodic()
 
     if (m_chooser.GetSelected() == kCubeConeAlignLeft || m_chooser.GetSelected() == kCubeConeAlignRight) {
         if(coneCollect){
-            if (autoIndex == 0 || autoIndex == 5 || autoIndex == 6)
+            if (autoIndex == 0 || autoIndex == 1 || autoIndex == 5 || autoIndex == 6)
             {
                 moveToCoord();
                 if (autoDesiredStates.fla < 600.0)
@@ -506,30 +506,6 @@ void Robot::AutonomousPeriodic()
                 setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
                 setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
                 
-            }
-            else if (autoIndex == 1)
-            {
-                if (m_chooser.GetSelected() == kCubeConeAlignLeft)
-                {
-                    moveToPosition(-10, 200, 180);
-                }
-                else
-                {
-                    moveToPosition(10, 200, 180);
-                }
-                if (autoDesiredStates.fla < 600.0)
-                {
-                    // Update wheel angles for the turn motors to read
-                    desiredTurnFL = autoDesiredStates.fla;
-                    desiredTurnFR = autoDesiredStates.fra;
-                    desiredTurnBL = autoDesiredStates.bla;
-                    desiredTurnBR = autoDesiredStates.bra;
-                }
-
-                setDesiredState(FLSwerveMotor, FLDriveMotor, &FLSwerveState, FLCANCoder.GetAbsolutePosition(), desiredTurnFL, &FLDriveState, autoDesiredStates.flm, autoDesiredStates.fla);
-                setDesiredState(FRSwerveMotor, FRDriveMotor, &FRSwerveState, FRCANCoder.GetAbsolutePosition(), desiredTurnFR, &FRDriveState, autoDesiredStates.frm, autoDesiredStates.fra);
-                setDesiredState(BLSwerveMotor, BLDriveMotor, &BLSwerveState, BLCANCoder.GetAbsolutePosition(), desiredTurnBL, &BLDriveState, autoDesiredStates.blm, autoDesiredStates.bla);
-                setDesiredState(BRSwerveMotor, BRDriveMotor, &BRSwerveState, BRCANCoder.GetAbsolutePosition(), desiredTurnBR, &BRDriveState, autoDesiredStates.brm, autoDesiredStates.bra);
             }
             else if (autoIndex == 2)
             {
