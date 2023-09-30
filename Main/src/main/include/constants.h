@@ -54,7 +54,7 @@ namespace RevIDs {
 }
 
 namespace mathConst {
-    const double speedLimit = 1;             // limit motor speed output   0 < x <= 1
+    const double speedLimit = 0.7;             // limit motor speed output   0 < x <= 1
     double pseudoSpeedLimit = speedLimit;
     // rotation:translation ratio
     double rotationVectorMultiplier = 0.4; 
